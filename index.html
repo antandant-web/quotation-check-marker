@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>設計報價菜單 | Design Quote Menu</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Header Bar -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div id="brand-logo-trigger" class="w-9 h-9 rounded-xl bg-teal-500 flex items-center justify-center font-bold text-lg shadow-sm select-none">
+          Q
+        </div>
+        <h1 id="app-main-title" class="font-bold text-base sm:text-lg tracking-tight">設計報價菜單</h1>
+      </div>
+
+      <div class="flex items-center gap-2.5">
+        <!-- Bilingual Switcher (中文 / EN) -->
+        <div class="inline-flex rounded-lg bg-slate-800 p-0.5 border border-slate-700" role="group">
+          <button type="button" id="btn-lang-zh" class="px-2.5 py-1 rounded-md text-xs font-bold transition bg-teal-500 text-white">
+            中文
+          </button>
+          <button type="button" id="btn-lang-en" class="px-2.5 py-1 rounded-md text-xs font-bold transition text-slate-300 hover:text-white">
+            EN
+          </button>
+        </div>
+
+        <button type="button" id="btn-open-menu-editor" class="text-xs font-medium px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+          <span id="lbl-open-editor">管理員登入</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Toast Notification -->
+  <div id="toast-bar" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 text-sm flex items-center gap-2 transition-all">
+    <span id="toast-text" class="font-medium">已複製到剪貼簿</span>
+  </div>
+
+  <!-- Main Dual-Pane POS Workspace -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- Left Pane: Main Categories -> Subcategories -> Preliminary Quote Panel (7 cols) -->
+      <section class="lg:col-span-7 flex flex-col gap-5">
+
+        <!-- Step 1: Main Categories (Icon + Text below) -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+          <div class="flex items-center justify-between mb-3">
+            <span id="lbl-step1-title" class="text-xs font-bold uppercase tracking-wider text-slate-500">1. 選擇設計主分類 (Main Category)</span>
+            <span id="lbl-step1-hint" class="text-xs text-slate-400">點擊圖示切換服務子分類</span>
+          </div>
+
+          <div id="main-category-row" class="grid grid-cols-2 sm:grid-cols-4 gap-3.5"></div>
+
+          <!-- Step 2: Subcategories under selected Main Category -->
+          <div class="mt-5 pt-4 border-t border-slate-100">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500" id="subcat-heading">2. 選擇子分類服務項目</span>
+                <span id="lbl-reveal-hint" class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 font-medium">點擊項目才揭露 From 底價</span>
+              </div>
+              <div class="relative w-44 sm:w-52">
+                <input id="search-input" type="text" placeholder="搜尋子分類服務..." class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500">
+              </div>
+            </div>
+
+            <div id="service-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+          </div>
+        </div>
+
+        <!-- Step 3: Preliminary Quote ('初步估價' / 'Preliminary Estimate') Drawer -->
+        <div id="modifier-panel" class="bg-white rounded-2xl p-5 shadow-sm border-2 border-teal-500/80 transition-all"></div>
+
+      </section>
+
+      <!-- Right Pane: Order Ticket / Live Receipt (5 cols) -->
+      <aside class="lg:col-span-5 lg:sticky lg:top-20">
+        <div id="receipt-capture-card" class="bg-white rounded-2xl shadow-sm border border-slate-200/90 overflow-hidden">
+
+          <!-- Ticket Top Header -->
+          <div class="bg-slate-900 text-white px-5 py-4 flex items-center justify-between">
+            <div>
+              <h2 id="lbl-ticket-title" class="font-bold text-base">結算報價單 (Order Ticket)</h2>
+              <p class="text-xs text-slate-400 mt-0.5" id="quote-date-display"></p>
+            </div>
+            <button type="button" id="btn-clear-cart" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white border border-slate-700 transition">
+              清空單據
+            </button>
+          </div>
+
+          <!-- Client & Note Inputs -->
+          <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label id="lbl-client-field" for="client-name" class="block text-xs font-semibold text-slate-600">客戶</label>
+              <input id="client-name" type="text" placeholder="輸入客戶名稱" value="Aroma Studio" class="mt-1 w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label id="lbl-note-field" for="project-title" class="block text-xs font-semibold text-slate-600">備註</label>
+              <input id="project-title" type="text" placeholder="輸入專案備註" value="品牌重塑與官網設計" class="mt-1 w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium focus:outline-none focus:border-teal-500">
+            </div>
+          </div>
+
+          <!-- Ordered Items List -->
+          <div class="p-5">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider pb-2 border-b border-slate-100">
+              <span id="lbl-col-items">已點選服務與規格細項</span>
+              <span id="lbl-col-subtotal">單項小計</span>
+            </div>
+
+            <div id="ticket-items-list" class="divide-y divide-slate-100 my-2 max-h-[340px] overflow-y-auto pr-1"></div>
+
+            <!-- Clean Front-End Deposit & Payment Mode Selector (Usage reminders & editing moved to Admin Login) -->
+            <div class="mt-4 pt-3 border-t border-slate-200/80 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60 space-y-2">
+              <div class="flex items-center justify-between">
+                <label id="lbl-payment-mode" for="payment-mode-select" class="block text-xs font-bold text-slate-700">定金及付款模式</label>
+              </div>
+
+              <select id="payment-mode-select" class="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg px-2.5 py-2 font-semibold text-slate-800 focus:outline-none focus:border-teal-500">
+                <option value="50_50" selected>50% / 50% — 開工前 50%，交付前 50%</option>
+                <option value="40_30_30">40% / 30% / 30% — 開工 40%、設計確認 30%、完成交付 30%</option>
+                <option value="30_40_30">30% / 40% / 30% — 開工 30%、中期成果 40%、驗收交付 30%</option>
+                <option value="25_4">25% × 4 — 分四個階段各付 25%</option>
+                <option value="100_upfront">100% upfront — 開始前全額付款</option>
+              </select>
+            </div>
+
+            <!-- Totals & Stage-by-Stage Deposit Breakdown -->
+            <div class="mt-4 pt-3 border-t border-slate-200 space-y-2.5 text-sm">
+              <div class="flex justify-between text-slate-600">
+                <span id="summary-count-text">已選服務項目 (2 項)</span>
+                <span class="font-medium tabular-nums" id="summary-subtotal">RM 2,270</span>
+              </div>
+
+              <div class="flex justify-between items-baseline pt-2 border-t border-slate-200">
+                <span id="lbl-grand-total" class="font-bold text-base text-slate-900">總結算報價 (Grand Total)</span>
+                <span class="font-bold text-2xl text-teal-600 tabular-nums" id="summary-grand-total">RM 2,270</span>
+              </div>
+
+              <!-- Dynamic Payment Schedule Box -->
+              <div class="bg-teal-50/60 rounded-xl p-3 border border-teal-200/80 space-y-1.5">
+                <div class="flex items-center justify-between text-xs font-bold text-teal-900 flex-wrap gap-1">
+                  <span id="schedule-mode-title">定金模式：50% / 50%</span>
+                  <span id="schedule-mode-desc" class="font-normal text-teal-700">開工前 50%，交付前 50%</span>
+                </div>
+                <div id="schedule-stages-list" class="space-y-1 pt-1 border-t border-teal-200/60 text-xs"></div>
+              </div>
+            </div>
+
+            <!-- Checkout & Export Actions (URL box removed; Print PDF replaced with real Save as Image) -->
+            <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button type="button" id="btn-open-whatsapp" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-1.5">
+                <span id="lbl-btn-wa">匯出 WhatsApp 報價單</span>
+              </button>
+              <button type="button" id="btn-save-image" class="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-1.5">
+                <span id="lbl-btn-img">存為圖片</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- Modal 1: WhatsApp Text Preview & Direct Send -->
+  <div id="whatsapp-modal" class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <h3 id="lbl-wa-modal-title" class="font-bold text-base">WhatsApp / 訊息報價單預覽</h3>
+        <button type="button" id="btn-close-wa-modal" class="text-slate-400 hover:text-white text-sm font-medium px-2 py-1 rounded">
+          關閉
+        </button>
+      </div>
+      <div class="p-5 space-y-4">
+        <p id="lbl-wa-modal-desc" class="text-xs text-slate-500">以下文字已自動整合所選服務與定金分期明細：</p>
+        <textarea id="wa-preview-text" rows="11" class="w-full text-xs sm:text-sm font-mono bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-teal-500"></textarea>
+        <div class="flex flex-wrap justify-end gap-2">
+          <button type="button" id="btn-copy-wa-text" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-semibold transition">
+            複製報價單文字
+          </button>
+          <a id="link-send-wa" href="https://wa.me/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold transition inline-flex items-center">
+            開啟 WhatsApp 傳送
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: High-Resolution Receipt Image Preview & Download Modal -->
+  <div id="image-preview-modal" class="fixed inset-0 z-40 bg-slate-900/70 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
+      <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div>
+          <h3 id="lbl-img-modal-title" class="font-bold text-base">報價單圖片已生成 (PNG)</h3>
+          <p id="lbl-img-modal-sub" class="text-xs text-slate-400">已自動觸發下載；手機或平板亦可直接長按下方圖片儲存</p>
+        </div>
+        <button type="button" id="btn-close-img-modal" class="text-slate-300 hover:text-white text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800">
+          關閉
+        </button>
+      </div>
+      <div class="p-4 bg-slate-100 overflow-y-auto flex-1 flex items-center justify-center">
+        <img id="generated-quote-img" alt="Quote Receipt PNG" class="max-w-full h-auto rounded-xl shadow-md border border-slate-200 bg-white">
+      </div>
+      <div class="px-5 py-3.5 bg-white border-t border-slate-200 flex items-center justify-end gap-2">
+        <a id="btn-download-png-link" href="#" download="Design-Quote.png" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-semibold transition inline-flex items-center gap-1.5">
+          <span id="lbl-download-again">下載 PNG 圖片檔案</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Admin Login & Backend Management ('管理員登入' — Houses All Login, Payment Mode Edits & Menu CRUD) -->
+  <div id="menu-editor-modal" class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-4xl w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
+      <div class="px-5 py-4 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-bold text-base">管理員後台 (Admin Portal)</h3>
+            <span id="cloud-sync-badge" class="text-[11px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-400/30 font-medium">Vercel + GitHub Sync</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">集中管理定金及付款模式、各階段比例、服務底價與菜單增刪</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="btn-save-cloud" class="hidden text-xs font-bold px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 transition shadow-sm">
+            同步儲存至 GitHub 雲端
+          </button>
+          <button type="button" id="btn-lock-admin" class="hidden text-xs font-medium px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/30 transition">
+            登出鎖定
+          </button>
+          <button type="button" id="btn-close-editor-modal" class="text-slate-300 hover:text-white text-xs font-medium px-3 py-2 rounded-xl bg-slate-800">
+            關閉
+          </button>
+        </div>
+      </div>
+
+      <!-- Admin Login Gate (Default View before unlocking) -->
+      <div id="admin-pin-gate" class="p-8 bg-slate-50 flex-1 flex flex-col items-center justify-center text-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-slate-900 text-teal-400 flex items-center justify-center font-bold shadow-sm">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </div>
+        <div class="max-w-md">
+          <div class="font-bold text-base text-slate-900">管理員登入 (Admin Login)</div>
+          <p class="text-xs text-slate-500 mt-1">請輸入管理員密碼以進入後台修改「定金及付款模式」、調整「服務底價」與「增刪菜單項目」（預覽環境預設密碼為 <code class="font-mono font-bold text-slate-800">8888</code>；部署至 Vercel 後將核對 <code class="font-mono">ADMIN_PASSWORD</code>）</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="admin-pin-input" type="password" placeholder="輸入管理員密碼 (8888)" class="w-48 text-center text-sm font-mono bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-teal-500">
+          <button type="button" id="btn-verify-pin" class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-semibold shadow-sm transition">
+            登入後台
+          </button>
+        </div>
+        <p id="pin-error-msg" class="text-xs text-rose-600 hidden">密碼不正確，預覽環境預設密碼為 8888</p>
+      </div>
+
+      <!-- Unlocked Admin Content -->
+      <div id="admin-editor-body" class="p-5 overflow-y-auto space-y-6 flex-1 hidden">
+
+        <!-- Cloud Password Bar -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <label for="cloud-admin-pwd" class="font-bold text-slate-700">Vercel 雲端同步驗證密碼 (ADMIN_PASSWORD)：</label>
+            <input id="cloud-admin-pwd" type="password" value="8888" placeholder="部署後的管理員密碼" class="w-40 font-mono bg-white border border-slate-300 rounded-lg px-2.5 py-1.5">
+            <span class="text-slate-500">（點擊上方「同步儲存至 GitHub 雲端」時會連同此密碼送往 <code class="font-mono">/api/menu</code> 寫回 GitHub）</span>
+          </div>
+        </div>
+
+        <!-- Section 1: Editable Payment & Deposit Modes Manager + Admin-Only Usage Reference Table -->
+        <div class="bg-indigo-50/40 rounded-xl p-4 border border-indigo-200 space-y-4">
+          <div>
+            <h4 class="font-bold text-sm text-slate-900">1. 定金及付款模式管理（含管理員專用常見用途參考）</h4>
+            <p class="text-xs text-slate-500 mt-0.5">以下「常見用途」僅顯示於管理員後台供你配置參考，不會顯示在前台客戶收據上。你可隨時修改各模式的名稱、付款安排、各階段名稱與百分比（`%`），或新增自訂付款模式：</p>
+          </div>
+
+          <!-- Admin-Only Common Usage Reference Guide -->
+          <div class="bg-white/90 rounded-xl p-3 border border-indigo-100 text-xs space-y-1.5">
+            <div class="font-bold text-indigo-950 mb-1">📌 管理員參考：常見定金及付款模式用途對照</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-600">
+              <div>• <span class="font-semibold text-slate-800">50% / 50%</span>：常見用途：Logo、平面設計、小型網站</div>
+              <div>• <span class="font-semibold text-slate-800">40% / 30% / 30%</span>：常見用途：中型設計及網站項目</div>
+              <div>• <span class="font-semibold text-slate-800">30% / 40% / 30%</span>：常見用途：大型網站、較長期項目</div>
+              <div>• <span class="font-semibold text-slate-800">25% × 4</span>：常見用途：長期、多階段或複雜項目</div>
+              <div>• <span class="font-semibold text-slate-800">100% upfront</span>：常見用途：小額、短期或單次服務</div>
+            </div>
+          </div>
+
+          <!-- Editable Payment Modes Cards (Full Stage-by-Stage Editing in Admin) -->
+          <div id="editor-payment-modes-list" class="space-y-3"></div>
+
+          <!-- Add New Payment Mode Row -->
+          <div class="pt-3 border-t border-indigo-200/70 grid grid-cols-1 sm:grid-cols-5 gap-2">
+            <input id="new-pm-label" type="text" placeholder="模式名稱 (如 60% / 40%)" class="text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-2">
+            <input id="new-pm-arrange" type="text" placeholder="付款安排說明 (如 開工60%，交付40%)" class="text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-2">
+            <input id="new-pm-usage" type="text" placeholder="後台備註用途 (如 急件或客製專案)" class="text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-2">
+            <input id="new-pm-pcts" type="text" placeholder="各階段% (如 60,40)" class="text-xs font-mono bg-white border border-slate-300 rounded-lg px-2.5 py-2">
+            <button type="button" id="btn-add-new-pm" class="py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition">
+              + 新增付款模式
+            </button>
+          </div>
+        </div>
+
+        <!-- Section 2: Add New Subcategory Service Item (Bilingual Support) -->
+        <div class="bg-teal-50/50 rounded-xl p-4 border border-teal-200">
+          <h4 class="font-bold text-sm text-slate-900 mb-3">2. + 新增子分類設計服務 (Add New Service)</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-6 gap-2.5">
+            <div>
+              <label for="new-svc-cat" class="block text-[11px] font-semibold text-slate-600">主分類</label>
+              <select id="new-svc-cat" class="mt-1 w-full text-xs bg-white border border-slate-300 rounded-lg px-2 py-2 font-medium">
+                <option value="branding">Branding</option>
+                <option value="printing">Printing</option>
+                <option value="graphic">Graphic Design</option>
+                <option value="wordpress">Wordpress Design</option>
+              </select>
+            </div>
+            <div>
+              <label for="new-svc-name" class="block text-[11px] font-semibold text-slate-600">服務名稱 (中文/主名稱)</label>
+              <input id="new-svc-name" type="text" placeholder="例如：包裝盒設計" class="mt-1 w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-2">
+            </div>
+            <div>
+              <label for="new-svc-name-en" class="block text-[11px] font-semibold text-slate-600">英文名稱 (EN Name)</label>
+              <input id="new-svc-name-en" type="text" placeholder="Packaging Design" class="mt-1 w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-2">
+            </div>
+            <div>
+              <label for="new-svc-desc" class="block text-[11px] font-semibold text-slate-600">簡短說明 (中 / 英)</label>
+              <input id="new-svc-desc" type="text" placeholder="彩盒刀模與貼紙設計" class="mt-1 w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-2">
+            </div>
+            <div>
+              <label for="new-svc-price" class="block text-[11px] font-semibold text-slate-600">From 底價 (RM)</label>
+              <input id="new-svc-price" type="number" min="0" step="10" placeholder="450" class="mt-1 w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-2 tabular-nums">
+            </div>
+            <div class="flex items-end">
+              <button type="button" id="btn-add-new-service" class="w-full py-2 px-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs transition">
+                + 新增至報價菜單
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Full CRUD for Existing Services -->
+        <div>
+          <h4 class="font-bold text-sm text-slate-900 mb-2.5">3. 現有服務管理（直接調價、刪減服務、增刪規格與加購項）</h4>
+          <div id="editor-service-list" class="space-y-3"></div>
+        </div>
+
+        <!-- Section 4: Export / Import JSON Config -->
+        <div class="pt-4 border-t border-slate-200">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+            <label for="json-config-box" class="text-xs font-bold text-slate-700">雲端 menu.json 資料結構預覽（包含菜單與自訂定金付款模式，自動與 GitHub /api/menu 同步）</label>
+            <div class="flex gap-2">
+              <button type="button" id="btn-copy-json" class="text-xs font-semibold px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-teal-700">複製 JSON</button>
+              <button type="button" id="btn-apply-json" class="text-xs font-semibold px-2.5 py-1 rounded bg-teal-600 hover:bg-teal-500 text-white">套用上方 JSON</button>
+            </div>
+          </div>
+          <textarea id="json-config-box" rows="4" class="w-full text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-teal-500"></textarea>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // UI Dictionary for Bilingual Switcher (zh / en)
+    const i18n = {
+      zh: {
+        appTitle: '設計報價菜單',
+        openEditorLocked: '管理員登入',
+        openEditorUnlocked: '管理員後台',
+        step1Title: '1. 選擇設計主分類 (Main Category)',
+        step1Hint: '點擊圖示切換服務子分類',
+        step2Suffix: '子分類項目',
+        step2Default: '2. 選擇子分類服務項目',
+        revealHint: '點擊項目才揭露 From 底價',
+        searchPlaceholder: '搜尋子分類服務...',
+        emptySubcat: '此分類下尚無符合條件的服務項目',
+        badgeSelected: '已點選',
+        badgeAvailable: '可選配',
+        fromPrefix: 'From ',
+        fromSuffix: ' 起',
+        quotingNow: '初步估價中 ▼',
+        clickToConfig: '點擊選配 →',
+        clickToReveal: '點擊查看 From 底價與規格',
+        prelimBadge: '初步估價',
+        prelimClickHint: '請點擊上方卡片揭露價格',
+        prelimUnitLabel: '單項初步估價',
+        prelimClickSpecHint: '點擊規格即顯示',
+        tierHeading: '1. 選擇規格條件（單選）：',
+        basePricePrefix: '底價 ',
+        addonHeading: '2. 加點附加服務（可複選）：',
+        qtyLabel: '數量',
+        itemNotePlaceholder: '單項備註（例如：雙面霧膜、特殊需求...）',
+        removeFromCart: '從報價單移除此項',
+        addToCart: '+ 加入結算報價單',
+        ticketTitle: '結算報價單 (Order Ticket)',
+        datePrefix: '報價日期：',
+        clearCart: '清空單據',
+        clientLabel: '客戶',
+        clientPlaceholder: '輸入客戶名稱',
+        noteLabel: '備註',
+        notePlaceholder: '輸入專案備註',
+        colItems: '已點選服務與規格細項',
+        colSubtotal: '單項小計',
+        emptyTicket: '目前尚未選擇任何服務，請先點選左側主分類與子分類項目。',
+        specPrefix: '規格：',
+        addonPrefix: '加點：',
+        notePrefix: '備註：',
+        btnEditSpec: '修改規格',
+        btnRemove: '移除',
+        paymentModeLabel: '定金及付款模式',
+        selectedCount: n => `已選服務項目 (${n} 項)`,
+        grandTotal: '總結算報價 (Grand Total)',
+        scheduleModePrefix: '定金模式：',
+        btnWa: '匯出 WhatsApp 報價單',
+        btnImg: '存為圖片',
+        waModalTitle: 'WhatsApp / 訊息報價單預覽',
+        waModalDesc: '以下文字已自動整合所選服務與定金分期明細：',
+        closeBtn: '關閉',
+        copyWaBtn: '複製報價單文字',
+        openWaBtn: '開啟 WhatsApp 傳送',
+        waHeader: '📋 *【設計報價單】*',
+        imgModalTitle: '報價單圖片已生成 (PNG)',
+        imgModalSub: '已自動觸發下載；手機或平板亦可直接長按下方圖片儲存',
+        downloadPngBtn: '下載 PNG 圖片檔案'
+      },
+      en: {
+        appTitle: 'Design Quote Menu',
+        openEditorLocked: 'Admin Login',
+        openEditorUnlocked: 'Admin Portal',
+        step1Title: '1. Select Main Category',
+        step1Hint: 'Click an icon to view subcategories',
+        step2Suffix: 'Subcategories',
+        step2Default: '2. Select Subcategory Service',
+        revealHint: 'Click an item to reveal From price',
+        searchPlaceholder: 'Search services...',
+        emptySubcat: 'No matching services found in this category',
+        badgeSelected: 'Selected',
+        badgeAvailable: 'Available',
+        fromPrefix: 'From ',
+        fromSuffix: '',
+        quotingNow: 'Configuring ▼',
+        clickToConfig: 'Configure →',
+        clickToReveal: 'Click to Reveal Base Price & Specs',
+        prelimBadge: 'Preliminary Estimate',
+        prelimClickHint: 'Click the service card above to reveal pricing',
+        prelimUnitLabel: 'Estimated Item Subtotal',
+        prelimClickSpecHint: 'Select a spec to view',
+        tierHeading: '1. Select Required Specification (Single Choice):',
+        basePricePrefix: 'Base ',
+        addonHeading: '2. Optional Add-on Services (Multi-Select):',
+        qtyLabel: 'Qty',
+        itemNotePlaceholder: 'Item note (e.g., matte lamination, custom color...)',
+        removeFromCart: 'Remove from Quote',
+        addToCart: '+ Add to Quote Ticket',
+        ticketTitle: 'Order Ticket & Quote Summary',
+        datePrefix: 'Date: ',
+        clearCart: 'Clear All',
+        clientLabel: 'Client',
+        clientPlaceholder: 'Enter client name',
+        noteLabel: 'Remarks',
+        notePlaceholder: 'Enter project remarks',
+        colItems: 'Selected Services & Modifiers',
+        colSubtotal: 'Subtotal',
+        emptyTicket: 'No services selected yet. Click a category and service on the left to start.',
+        specPrefix: 'Spec: ',
+        addonPrefix: 'Add-on: ',
+        notePrefix: 'Note: ',
+        btnEditSpec: 'Edit',
+        btnRemove: 'Remove',
+        paymentModeLabel: 'Deposit & Payment Schedule',
+        selectedCount: n => `Selected Services (${n})`,
+        grandTotal: 'Grand Total',
+        scheduleModePrefix: 'Schedule: ',
+        btnWa: 'Export WhatsApp Quote',
+        btnImg: 'Save as Image',
+        waModalTitle: 'WhatsApp Quote Message Preview',
+        waModalDesc: 'Formatted summary with selected specs and payment stages:',
+        closeBtn: 'Close',
+        copyWaBtn: 'Copy Quote Text',
+        openWaBtn: 'Send via WhatsApp',
+        waHeader: '📋 *[DESIGN QUOTATION]*',
+        imgModalTitle: 'Quote Receipt Image Generated (PNG)',
+        imgModalSub: 'Download started automatically; on mobile, long-press the image below to save',
+        downloadPngBtn: 'Download PNG Image'
+      }
+    };
+
+    // 1. Main Categories Definition
+    const mainCategories = [
+      {
+        id: 'branding',
+        label: 'Branding',
+        labelZh: '品牌設計 Branding',
+        subHint: 'Logo · Namecard',
+        svg: `<svg class="w-10 h-10 mx-auto" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="10" width="32" height="24" rx="4" fill="#ccfbf1" stroke="#0f172a" stroke-width="2"/>
+          <circle cx="19" cy="22" r="5" fill="#f97316" stroke="#0f172a" stroke-width="2"/>
+          <path d="M28 19H35M28 25H33" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
+          <path d="M16 38H32" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
+        </svg>`
+      },
+      {
+        id: 'printing',
+        label: 'Printing',
+        labelZh: '印刷品設計 Printing',
+        subHint: 'Brochure · Banner · Poster',
+        svg: `<svg class="w-10 h-10 mx-auto" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 10H34V18H14V10Z" fill="#fed7aa" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>
+          <rect x="8" y="18" width="32" height="14" rx="3" fill="#e2e8f0" stroke="#0f172a" stroke-width="2"/>
+          <rect x="14" y="26" width="20" height="12" fill="#ccfbf1" stroke="#0f172a" stroke-width="2"/>
+          <circle cx="34" cy="23" r="1.5" fill="#0f172a"/>
+        </svg>`
+      },
+      {
+        id: 'graphic',
+        label: 'Graphic Design',
+        labelZh: '平面視覺 Graphic Design',
+        subHint: 'Social Post · Ads',
+        svg: `<svg class="w-10 h-10 mx-auto" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="9" y="9" width="30" height="30" rx="6" fill="#ccfbf1" stroke="#0f172a" stroke-width="2"/>
+          <circle cx="18" cy="18" r="3.5" fill="#f97316" stroke="#0f172a" stroke-width="1.8"/>
+          <path d="M11 33L20 24L27 31L32 26L38 33" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`
+      },
+      {
+        id: 'wordpress',
+        label: 'Wordpress Design',
+        labelZh: '網站設計 Wordpress',
+        subHint: 'Landing · Multi-Page',
+        svg: `<svg class="w-10 h-10 mx-auto" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="7" y="10" width="34" height="26" rx="4" fill="#fed7aa" stroke="#0f172a" stroke-width="2"/>
+          <path d="M7 17H41" stroke="#0f172a" stroke-width="2"/>
+          <circle cx="12" cy="13.5" r="1.2" fill="#0f172a"/>
+          <circle cx="16" cy="13.5" r="1.2" fill="#0f172a"/>
+          <rect x="13" y="22" width="22" height="9" rx="2" fill="#ccfbf1" stroke="#0f172a" stroke-width="1.8"/>
+        </svg>`
+      }
+    ];
+
+    // 2. Editable Payment & Deposit Modes Default Presets (Usage notes kept for Admin Portal only)
+    const defaultPaymentModes = {
+      '50_50': {
+        id: '50_50',
+        label: '50% / 50%',
+        optionZh: '50% / 50% — 開工前 50%，交付前 50%',
+        optionEn: '50% / 50% — 50% Deposit, 50% Before Delivery',
+        arrangement: '開工前 50%，交付前 50%',
+        arrangementEn: '50% upfront deposit, 50% upon final delivery',
+        usage: 'Logo、平面設計、小型網站',
+        usageEn: 'Logo, graphic design, small websites',
+        stages: [
+          { name: '第一階段（開工前定金 50%）', nameEn: 'Stage 1 (50% Upfront Deposit)', pct: 50 },
+          { name: '第二階段（完稿交付前尾款 50%）', nameEn: 'Stage 2 (50% Before Final Delivery)', pct: 50 }
+        ]
+      },
+      '40_30_30': {
+        id: '40_30_30',
+        label: '40% / 30% / 30%',
+        optionZh: '40% / 30% / 30% — 開工 40%、設計確認 30%、完成交付 30%',
+        optionEn: '40% / 30% / 30% — 40% Start, 30% Design Approval, 30% Handover',
+        arrangement: '開工 40%、設計確認 30%、完成交付 30%',
+        arrangementEn: '40% kickoff, 30% design approval, 30% completion',
+        usage: '中型設計及網站項目',
+        usageEn: 'Medium-scale branding & website projects',
+        stages: [
+          { name: '第一階段（開工定金 40%）', nameEn: 'Stage 1 (40% Kickoff Deposit)', pct: 40 },
+          { name: '第二階段（設計確認 30%）', nameEn: 'Stage 2 (30% Design Confirmation)', pct: 30 },
+          { name: '第三階段（完成交付 30%）', nameEn: 'Stage 3 (30% Final Handover)', pct: 30 }
+        ]
+      },
+      '30_40_30': {
+        id: '30_40_30',
+        label: '30% / 40% / 30%',
+        optionZh: '30% / 40% / 30% — 開工 30%、中期成果 40%、驗收交付 30%',
+        optionEn: '30% / 40% / 30% — 30% Start, 40% Milestone, 30% Final Acceptance',
+        arrangement: '開工 30%、中期成果 40%、驗收交付 30%',
+        arrangementEn: '30% kickoff, 40% mid-project milestone, 30% acceptance',
+        usage: '大型網站、較長期項目',
+        usageEn: 'Large websites & longer-term projects',
+        stages: [
+          { name: '第一階段（開工定金 30%）', nameEn: 'Stage 1 (30% Kickoff Deposit)', pct: 30 },
+          { name: '第二階段（中期成果 40%）', nameEn: 'Stage 2 (40% Mid-Term Milestone)', pct: 40 },
+          { name: '第三階段（驗收交付 30%）', nameEn: 'Stage 3 (30% Final Acceptance)', pct: 30 }
+        ]
+      },
+      '25_4': {
+        id: '25_4',
+        label: '25% × 4',
+        optionZh: '25% × 4 — 分四個階段各付 25%',
+        optionEn: '25% × 4 — 4 Equal Milestone Installments of 25%',
+        arrangement: '分四個階段各付 25%',
+        arrangementEn: '4 milestone installments of 25% each',
+        usage: '長期、多階段或複雜項目',
+        usageEn: 'Long-term, multi-phase or complex projects',
+        stages: [
+          { name: '第一階段（專案啟動 25%）', nameEn: 'Stage 1 (25% Project Kickoff)', pct: 25 },
+          { name: '第二階段（架構與初稿 25%）', nameEn: 'Stage 2 (25% Wireframe & Draft)', pct: 25 },
+          { name: '第三階段（階段整合 25%）', nameEn: 'Stage 3 (25% Integration & Review)', pct: 25 },
+          { name: '第四階段（完稿驗收 25%）', nameEn: 'Stage 4 (25% Final Sign-off)', pct: 25 }
+        ]
+      },
+      '100_upfront': {
+        id: '100_upfront',
+        label: '100% upfront',
+        optionZh: '100% upfront — 開始前全額付款',
+        optionEn: '100% upfront — Full Payment Before Kickoff',
+        arrangement: '開始前全額付款',
+        arrangementEn: '100% full payment prior to starting',
+        usage: '小額、短期或單次服務',
+        usageEn: 'Small-value, rush, or single-task orders',
+        stages: [
+          { name: '全額預付（開工前 100% 付清）', nameEn: '100% Full Upfront Payment', pct: 100 }
+        ]
+      }
+    };
+
+    // 3. Bilingual Subcategory Catalog
+    const defaultCatalog = [
+      // Branding
+      {
+        id: 'logo',
+        cat: 'branding',
+        catName: 'Branding',
+        name: 'Logo Design',
+        nameEn: 'Logo Design',
+        desc: '品牌標誌設計提案、標準字與色彩規範',
+        descEn: 'Custom brand logo concepts, typography & color palette',
+        basePrice: 600,
+        revealed: false,
+        inCart: false,
+        qty: 1,
+        note: '',
+        selectedTier: 'std',
+        tiers: [
+          { id: 'basic', label: '基礎方案 (2 款初稿 + 2 次修改)', labelEn: 'Basic (2 Concepts + 2 Revisions)', add: 0 },
+          { id: 'std', label: '標準方案 (3 款初稿 + 色彩與字體規範)', labelEn: 'Standard (3 Concepts + Brand Mini-Guide)', add: 350 },
+          { id: 'vi', label: '完整品牌 VI 識別手冊 (含應用規範)', labelEn: 'Full Brand Identity Guideline Book', add: 950 }
+        ],
+        addons: [
+          { id: 'ai_file', label: '包含 AI / EPS 原始向量印刷檔', labelEn: 'Include Master AI / EPS Vector Files', price: 200, checked: false },
+          { id: 'social_kit', label: '社群頭貼與封面尺寸延伸套組', labelEn: 'Social Media Profile & Cover Kit', price: 180, checked: false },
+          { id: 'rush_logo', label: '48 小時急件優先處理', labelEn: '48-Hour Rush Priority Delivery', price: 250, checked: false }
+        ]
+      },
+      {
+        id: 'card',
+        cat: 'branding',
+        catName: 'Branding',
+        name: 'Namecard Design',
+        nameEn: 'Namecard Design',
+        desc: '商業名片版面設計、特別尺寸刀模與送印服務',
+        descEn: 'Double-sided business card layout, custom die-cut & printing',
+        basePrice: 150,
+        revealed: true,
+        inCart: true,
+        qty: 1,
+        note: '雙面設計',
+        selectedTier: 'custom_size',
+        tiers: [
+          { id: 'std_size', label: '標準尺寸 90×54mm (純設計底價)', labelEn: 'Standard Size 90×54mm (Design Only)', add: 0 },
+          { id: 'custom_size', label: '特別尺寸 / 圓角或異形刀模', labelEn: 'Custom Size / Die-Cut Shape Setup', add: 80 },
+          { id: 'fold_card', label: '對折雙倍資訊名片卡', labelEn: 'Folded Double Business Card', add: 150 }
+        ],
+        addons: [
+          { id: 'print_inc', label: '包含送去 Printing (260g 霧膜 2 盒)', labelEn: 'Include Printing (260gsm Matte Lamination, 2 Boxes)', price: 120, checked: true },
+          { id: 'spot_uv', label: '局部 UV / 燙金工藝完稿設定', labelEn: 'Spot UV / Hot Stamping Foil Artwork Setup', price: 90, checked: false },
+          { id: 'extra_person', label: '每加 1 位同仁名片套版', labelEn: 'Additional Staff Name Adaptation (Per Person)', price: 40, checked: false }
+        ]
+      },
+
+      // Printing
+      {
+        id: 'brochure',
+        cat: 'printing',
+        catName: 'Printing',
+        name: 'Brochure / Flyer Design',
+        nameEn: 'Brochure / Flyer Design',
+        desc: '宣傳單張、對折/三折頁 DM 與多頁型錄設計',
+        descEn: 'Promotional flyers, bi-fold/tri-fold brochures & booklets',
+        basePrice: 280,
+        revealed: false,
+        inCart: false,
+        qty: 1,
+        note: '',
+        selectedTier: 'flyer_2s',
+        tiers: [
+          { id: 'flyer_1s', label: 'A4 / A5 單面宣傳單 (Flyer 底價)', labelEn: 'A4 / A5 Single-Sided Flyer (Base)', add: 0 },
+          { id: 'flyer_2s', label: 'A4 / A5 雙面宣傳單', labelEn: 'A4 / A5 Double-Sided Flyer', add: 120 },
+          { id: 'trifold', label: '三折頁宣傳冊 Brochure (6 面排版)', labelEn: 'Tri-Fold Brochure (6 Panels)', add: 320 }
+        ],
+        addons: [
+          { id: 'print_500', label: '包含送去 Printing (157g 銅版紙 500 張)', labelEn: 'Include Printing (157gsm Art Paper, 500 pcs)', price: 260, checked: false },
+          { id: 'retouch', label: '產品照片去背與調色 (10 張內)', labelEn: 'Product Photo Background Removal (Up to 10)', price: 150, checked: false }
+        ]
+      },
+      {
+        id: 'banner',
+        cat: 'printing',
+        catName: 'Printing',
+        name: 'Banner / Standee Design',
+        nameEn: 'Banner / Standee Design',
+        desc: '活動布條、易拉展 (Roll-up Standee) 與人形立牌設計',
+        descEn: 'Event bunting, roll-up standees & large format banners',
+        basePrice: 200,
+        revealed: false,
+        inCart: false,
+        qty: 1,
+        note: '',
+        selectedTier: 'standee_std',
+        tiers: [
+          { id: 'standee_std', label: '標準易拉展 Standee 80×200cm (底價)', labelEn: 'Standard Roll-Up Standee 80×200cm (Base)', add: 0 },
+          { id: 'outdoor_banner', label: '大型戶外橫幅 Banner 大圖設計', labelEn: 'Large Outdoor Event Banner Design', add: 150 },
+          { id: 'backdrop', label: '活動舞台背板 Backdrop 視覺設計', labelEn: 'Event Stage Backdrop Visual Design', add: 380 }
+        ],
+        addons: [
+          { id: 'print_standee', label: '包含送去 Printing (含鋁合金易拉展架 1 組)', labelEn: 'Include Printing + Aluminum Roll-Up Stand', price: 180, checked: false },
+          { id: 'resize_ver', label: '延伸修改第 2 種尺寸規格', labelEn: 'Resize Adaptation for 2nd Dimension', price: 90, checked: false }
+        ]
+      },
+      {
+        id: 'poster',
+        cat: 'printing',
+        catName: 'Printing',
+        name: 'Poster Design',
+        nameEn: 'Poster Design',
+        desc: '商業促銷海報、門市燈箱片與活動主視覺海報',
+        descEn: 'Retail promotional posters, lightbox visuals & key art',
+        basePrice: 220,
+        revealed: false,
+        inCart: false,
+        qty: 1,
+        note: '',
+        selectedTier: 'a3_a2',
+        tiers: [
+          { id: 'a3_a2', label: '標準 A3 / A2 商業海報 (底價)', labelEn: 'Standard A3 / A2 Poster (Base)', add: 0 },
+          { id: 'a1_b1', label: '大型 A1 / B1 高解析主視覺海報', labelEn: 'Large Format A1 / B1 Key Visual Poster', add: 160 }
+        ],
+        addons: [
+          { id: 'print_poster', label: '包含送去 Printing (海報輸出 10 張)', labelEn: 'Include Poster Printing (10 Prints)', price: 140, checked: false },
+          { id: 'social_adapt', label: '同步轉製為 IG / FB 貼文尺寸', labelEn: 'Adapt into IG / FB Social Post Size', price: 80, checked: false }
+        ]
+      },
+
+      // Graphic Design
+      {
+        id: 'social_post',
+        cat: 'graphic',
+        catName: 'Graphic Design',
+        name: 'Social Media Posting',
+        nameEn: 'Social Media Posting',
+        desc: 'IG / FB 日常品牌貼文、多圖輪播 (Carousel) 與限動排版',
+        descEn: 'IG / FB branded posts, multi-slide carousels & stories',
+        basePrice: 120,
+        revealed: false,
+        inCart: false,
+        qty: 1,
+        note: '',
+        selectedTier: 'single_post',
+        tiers: [
+          { id: 'single_post', label: '單張主題貼文設計 (底價)', labelEn: 'Single Feed Post Design (Base)', add: 0 },
+          { id: 'carousel_5', label: '多圖輪播貼文 Carousel (5 頁內)', labelEn: 'Carousel Post (Up to 5 Slides)', add: 220 },
+          { id: 'monthly_8', label: '包月 8 則品牌貼文視覺套組', labelEn: 'Monthly Package (8 Branded Posts)', add: 680 }
+        ],
+        addons: [
+          { id: 'story_ver', label: '加購同步延伸 IG Story 限動尺寸', labelEn: 'Adapt into IG Story 9:16 Vertical Format', price: 60, checked: false },
+          { id: 'canva_link', label: '提供可自行改字的 Canva 模板', labelEn: 'Editable Canva Template Link Handover', price: 150, checked: false }
+        ]
+      },
+      {
+        id: 'social_ads',
+        cat: 'graphic',
+        catName: 'Graphic Design',
+        name: 'Social Media Ads',
+        nameEn: 'Social Media Ads',
+        desc: '高轉換率 FB / IG / Google 聯播網廣告投放素材設計',
+        descEn: 'High-converting Meta FB/IG & Google Display ad creatives',
+        basePrice: 180,
+        revealed: false,
+        inCart: false,
+        qty: 1,
+        note: '',
+        selectedTier: 'ad_single',
+        tiers: [
+          { id: 'ad_single', label: '單款主打廣告視覺 1:1 (底價)', labelEn: 'Single Key Ad Creative 1:1 (Base)', add: 0 },
+          { id: 'ad_abtest', label: 'A/B 測試雙視覺組 (2 款不同構圖)', labelEn: 'A/B Testing Dual Ad Concepts (2 Visuals)', add: 160 },
+          { id: 'ad_fullpack', label: '全版位廣告包 (1:1 + 4:5 + 9:16 共 3 尺寸)', labelEn: 'Full Placement Bundle (1:1 + 4:5 + 9:16)', add: 260 }
+        ],
+        addons: [
+          { id: 'ad_copy', label: '包含廣告主標與 CTA 銷售文案企劃', labelEn: 'Ad Headline & CTA Copywriting', price: 120, checked: false },
+          { id: 'psd_source', label: '交付可編輯 PSD / AI 原始分層檔', labelEn: 'Editable Layered PSD / AI Source File', price: 150, checked: false }
+        ]
+      },
+
+      // Wordpress Design
+      {
+        id: 'wp',
+        cat: 'wordpress',
+        catName: 'Wordpress Design',
+        name: 'WordPress Design',
+        nameEn: 'WordPress Design',
+        desc: 'RWD 響應式客製化 WordPress 官方網站與形象頁建置',
+        descEn: 'Responsive custom WordPress website & landing page build',
+        basePrice: 1200,
+        revealed: true,
+        inCart: true,
+        qty: 1,
+        note: '含手機平板自適應排版',
+        selectedTier: '2p',
+        tiers: [
+          { id: '1p', label: 'Single Landing Page (單頁式底價)', labelEn: 'Single Landing Page (Base)', add: 0 },
+          { id: '2p', label: '2 Pages 形象網站 (首頁 + 內頁)', labelEn: '2 Pages Website (Home + Inner Page)', add: 500 },
+          { id: '4p', label: '4 Pages 完整企業網站', labelEn: '4 Pages Corporate Website', add: 1100 }
+        ],
+        addons: [
+          { id: 'seo', label: '基礎 SEO 與網站速度最佳化', labelEn: 'Basic On-Page SEO & Speed Optimization', price: 300, checked: true },
+          { id: 'bilingual', label: '雙語切換功能架構 (中/英)', labelEn: 'Bilingual Language Switcher Setup (ZH/EN)', price: 450, checked: false },
+          { id: 'hosting', label: '代辦網域申請與主機架設', labelEn: 'Domain & Hosting Setup Assistance', price: 200, checked: false }
+        ]
+      }
+    ];
+
+    // App State
+    let catalog = JSON.parse(JSON.stringify(defaultCatalog));
+    let paymentModes = JSON.parse(JSON.stringify(defaultPaymentModes));
+    let currentLang = 'zh';
+    let currentCategory = 'branding';
+    let searchQuery = '';
+    let activeServiceId = 'card';
+    let selectedPaymentMode = '50_50';
+    let adminUnlocked = false; // Default locked so '管理員登入' opens the login gate first!
+
+    // DOM References
+    const mainCatRowEl = document.getElementById('main-category-row');
+    const subcatHeadingEl = document.getElementById('subcat-heading');
+    const serviceGridEl = document.getElementById('service-grid');
+    const modifierPanelEl = document.getElementById('modifier-panel');
+    const ticketItemsListEl = document.getElementById('ticket-items-list');
+    const paymentModeSelectEl = document.getElementById('payment-mode-select');
+    const clientNameEl = document.getElementById('client-name');
+    const projectTitleEl = document.getElementById('project-title');
+    const searchInputEl = document.getElementById('search-input');
+
+    function t(key) {
+      return i18n[currentLang][key] || i18n.zh[key] || '';
+    }
+
+    function itemName(item) {
+      return currentLang === 'en' ? (item.nameEn || item.name) : item.name;
+    }
+
+    function itemDesc(item) {
+      return currentLang === 'en' ? (item.descEn || item.desc) : item.desc;
+    }
+
+    function tierLabel(tier) {
+      return currentLang === 'en' ? (tier.labelEn || tier.label) : tier.label;
+    }
+
+    function addonLabel(addon) {
+      return currentLang === 'en' ? (addon.labelEn || addon.label) : addon.label;
+    }
+
+    function fmtMoney(amount) {
+      return 'RM ' + Number(amount || 0).toLocaleString('en-US');
+    }
+
+    function calcServiceUnit(item) {
+      const tier = item.tiers.find(x => x.id === item.selectedTier) || item.tiers[0];
+      const addonSum = item.addons.filter(a => a.checked).reduce((acc, a) => acc + a.price, 0);
+      return item.basePrice + (tier ? tier.add : 0) + addonSum;
+    }
+
+    function calcServiceTotal(item) {
+      return calcServiceUnit(item) * (item.qty || 1);
+    }
+
+    function showToast(msg) {
+      const bar = document.getElementById('toast-bar');
+      const txt = document.getElementById('toast-text');
+      txt.textContent = msg;
+      bar.classList.remove('hidden');
+      setTimeout(() => {
+        bar.classList.add('hidden');
+      }, 2600);
+    }
+
+    function copyTextSafe(text, successMsg) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(successMsg);
+        }).catch(() => {
+          fallbackCopy(text, successMsg);
+        });
+      } else {
+        fallbackCopy(text, successMsg);
+      }
+    }
+
+    function fallbackCopy(text, successMsg) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast(successMsg);
+      } catch (e) {
+        showToast('請手動全選複製');
+      }
+      document.body.removeChild(ta);
+    }
+
+    // Rebuild Payment Mode Select Options dynamically from `paymentModes`
+    function rebuildPaymentModeSelect() {
+      const keys = Object.keys(paymentModes);
+      if (keys.length === 0) return;
+      if (!paymentModes[selectedPaymentMode]) {
+        selectedPaymentMode = keys[0];
+      }
+      paymentModeSelectEl.replaceChildren();
+      keys.forEach(k => {
+        const m = paymentModes[k];
+        const opt = document.createElement('option');
+        opt.value = k;
+        opt.selected = (k === selectedPaymentMode);
+        const arrange = currentLang === 'en' ? (m.arrangementEn || m.arrangement) : m.arrangement;
+        opt.textContent = `${m.label} — ${arrange}`;
+        paymentModeSelectEl.appendChild(opt);
+      });
+    }
+
+    // Load Cloud Catalog & Payment Modes from Vercel Serverless API (/api/menu)
+    async function loadCloudCatalogIfAvailable() {
+      try {
+        const res = await fetch('/api/menu', { method: 'GET', headers: { 'Accept': 'application/json' } });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.catalog) && data.catalog.length > 0) {
+            catalog = data.catalog;
+          }
+          if (data && data.paymentModes && Object.keys(data.paymentModes).length > 0) {
+            paymentModes = data.paymentModes;
+          }
+          renderAll();
+        }
+      } catch (e) {
+        // Running locally or in Canvas preview; uses built-in defaults seamlessly
+      }
+    }
+
+    // Save Catalog & Payment Modes to Vercel Serverless API (/api/menu -> GitHub repo)
+    async function saveCatalogToVercelCloud() {
+      const pwd = document.getElementById('cloud-admin-pwd').value.trim();
+      const saveBtn = document.getElementById('btn-save-cloud');
+      const origText = saveBtn.textContent;
+      saveBtn.textContent = '同步中...';
+
+      try {
+        const res = await fetch('/api/menu', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-password': pwd
+          },
+          body: JSON.stringify({ catalog, paymentModes })
+        });
+        if (res.ok) {
+          showToast('已成功透過 Vercel API 將菜單與付款模式寫回 GitHub 雲端！');
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          showToast(errData.error || '已更新當前網站設定（部署至 Vercel 後即自動寫入 GitHub）');
+        }
+      } catch (e) {
+        showToast('已套用修改！（部署至 Vercel 後將自動寫入 GitHub /api/menu）');
+      } finally {
+        saveBtn.textContent = origText;
+      }
+    }
+
+    // Apply Bilingual Static Texts
+    function applyStaticTranslations() {
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      document.getElementById('quote-date-display').textContent = `${t('datePrefix')}${dateStr}`;
+
+      document.getElementById('app-main-title').textContent = t('appTitle');
+      document.getElementById('lbl-open-editor').textContent = adminUnlocked ? t('openEditorUnlocked') : t('openEditorLocked');
+      document.getElementById('lbl-step1-title').textContent = t('step1Title');
+      document.getElementById('lbl-step1-hint').textContent = t('step1Hint');
+      document.getElementById('lbl-reveal-hint').textContent = t('revealHint');
+      searchInputEl.placeholder = t('searchPlaceholder');
+
+      document.getElementById('lbl-ticket-title').textContent = t('ticketTitle');
+      document.getElementById('btn-clear-cart').textContent = t('clearCart');
+      document.getElementById('lbl-client-field').textContent = t('clientLabel');
+      clientNameEl.placeholder = t('clientPlaceholder');
+      document.getElementById('lbl-note-field').textContent = t('noteLabel');
+      projectTitleEl.placeholder = t('notePlaceholder');
+      document.getElementById('lbl-col-items').textContent = t('colItems');
+      document.getElementById('lbl-col-subtotal').textContent = t('colSubtotal');
+      document.getElementById('lbl-payment-mode').textContent = t('paymentModeLabel');
+      document.getElementById('lbl-grand-total').textContent = t('grandTotal');
+      document.getElementById('lbl-btn-wa').textContent = t('btnWa');
+      document.getElementById('lbl-btn-img').textContent = t('btnImg');
+
+      document.getElementById('lbl-wa-modal-title').textContent = t('waModalTitle');
+      document.getElementById('lbl-wa-modal-desc').textContent = t('waModalDesc');
+      document.getElementById('btn-close-wa-modal').textContent = t('closeBtn');
+      document.getElementById('btn-copy-wa-text').textContent = t('copyWaBtn');
+      document.getElementById('link-send-wa').textContent = t('openWaBtn');
+
+      document.getElementById('lbl-img-modal-title').textContent = t('imgModalTitle');
+      document.getElementById('lbl-img-modal-sub').textContent = t('imgModalSub');
+      document.getElementById('btn-close-img-modal').textContent = t('closeBtn');
+      document.getElementById('lbl-download-again').textContent = t('downloadPngBtn');
+
+      rebuildPaymentModeSelect();
+
+      const btnZh = document.getElementById('btn-lang-zh');
+      const btnEn = document.getElementById('btn-lang-en');
+      if (currentLang === 'zh') {
+        btnZh.className = 'px-2.5 py-1 rounded-md text-xs font-bold transition bg-teal-500 text-white';
+        btnEn.className = 'px-2.5 py-1 rounded-md text-xs font-bold transition text-slate-300 hover:text-white';
+      } else {
+        btnEn.className = 'px-2.5 py-1 rounded-md text-xs font-bold transition bg-teal-500 text-white';
+        btnZh.className = 'px-2.5 py-1 rounded-md text-xs font-bold transition text-slate-300 hover:text-white';
+      }
+    }
+
+    // Render Main Category Cards (Icon + Text Below)
+    function renderMainCategories() {
+      mainCatRowEl.replaceChildren();
+
+      mainCategories.forEach(cat => {
+        const isSelected = currentCategory === cat.id;
+        const countInCat = catalog.filter(s => s.cat === cat.id && s.inCart).length;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'group flex flex-col items-center text-center focus:outline-none transition';
+
+        const iconBox = document.createElement('div');
+        iconBox.className = `w-full aspect-square max-w-[116px] rounded-xl border-2 flex flex-col items-center justify-center p-3 transition-all relative ${
+          isSelected
+            ? 'border-orange-400 bg-orange-50/40 shadow-sm scale-[1.02]'
+            : 'border-orange-200/90 bg-white group-hover:border-orange-300 group-hover:bg-orange-50/20'
+        }`;
+
+        const svgWrap = document.createElement('div');
+        svgWrap.innerHTML = cat.svg;
+        iconBox.appendChild(svgWrap);
+
+        if (countInCat > 0) {
+          const badge = document.createElement('span');
+          badge.className = 'absolute -top-2 -right-2 w-5 h-5 rounded-full bg-teal-600 text-white text-[11px] font-bold flex items-center justify-center shadow-xs';
+          badge.textContent = String(countInCat);
+          iconBox.appendChild(badge);
+        }
+
+        const labelEl = document.createElement('div');
+        labelEl.className = `mt-2 text-xs sm:text-sm font-bold leading-tight ${
+          isSelected ? 'text-teal-700' : 'text-slate-800 group-hover:text-teal-600'
+        }`;
+        labelEl.textContent = cat.label;
+
+        const hintEl = document.createElement('div');
+        hintEl.className = 'text-[11px] text-slate-400 mt-0.5';
+        hintEl.textContent = cat.subHint;
+
+        btn.appendChild(iconBox);
+        btn.appendChild(labelEl);
+        btn.appendChild(hintEl);
+
+        btn.addEventListener('click', () => {
+          currentCategory = cat.id;
+          searchQuery = '';
+          searchInputEl.value = '';
+          const itemsInCat = catalog.filter(s => s.cat === currentCategory);
+          if (itemsInCat.length > 0 && !itemsInCat.some(s => s.id === activeServiceId)) {
+            activeServiceId = itemsInCat[0].id;
+            if (itemsInCat.length === 1) {
+              itemsInCat[0].revealed = true;
+            }
+          }
+          renderAll();
+        });
+
+        mainCatRowEl.appendChild(btn);
+      });
+    }
+
+    // Render Subcategories under Selected Main Category
+    function renderServiceGrid() {
+      serviceGridEl.replaceChildren();
+      const activeCatObj = mainCategories.find(c => c.id === currentCategory);
+      subcatHeadingEl.textContent = activeCatObj
+        ? `2. ${activeCatObj.label} ${t('step2Suffix')}`
+        : t('step2Default');
+
+      const filtered = catalog.filter(item => {
+        const q = searchQuery.trim().toLowerCase();
+        if (q) {
+          return itemName(item).toLowerCase().includes(q) || itemDesc(item).toLowerCase().includes(q);
+        }
+        return item.cat === currentCategory;
+      });
+
+      if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'col-span-2 text-center py-6 text-slate-400 text-sm';
+        empty.textContent = t('emptySubcat');
+        serviceGridEl.appendChild(empty);
+        return;
+      }
+
+      filtered.forEach(item => {
+        const isCurrent = item.id === activeServiceId;
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `text-left p-4 rounded-xl border transition-all flex flex-col justify-between gap-2 ${
+          isCurrent
+            ? 'bg-teal-50/60 border-teal-500 ring-2 ring-teal-500/20 shadow-xs'
+            : 'bg-slate-50/70 hover:bg-white border-slate-200 hover:border-slate-300'
+        }`;
+
+        const topRow = document.createElement('div');
+        topRow.className = 'w-full flex items-start justify-between gap-2';
+
+        const catBadge = document.createElement('span');
+        catBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-200/80 text-slate-700';
+        catBadge.textContent = item.catName;
+
+        const statusBadge = document.createElement('span');
+        if (item.inCart) {
+          statusBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
+          statusBadge.textContent = `${t('badgeSelected')} ×${item.qty}`;
+        } else {
+          statusBadge.className = 'text-[11px] font-medium text-slate-400';
+          statusBadge.textContent = t('badgeAvailable');
+        }
+
+        topRow.appendChild(catBadge);
+        topRow.appendChild(statusBadge);
+
+        const bodyRow = document.createElement('div');
+        const titleEl = document.createElement('div');
+        titleEl.className = 'font-bold text-sm sm:text-base text-slate-900 mt-1';
+        titleEl.textContent = itemName(item);
+
+        const descEl = document.createElement('div');
+        descEl.className = 'text-xs text-slate-500 mt-0.5 line-clamp-1';
+        descEl.textContent = itemDesc(item);
+
+        bodyRow.appendChild(titleEl);
+        bodyRow.appendChild(descEl);
+
+        const bottomRow = document.createElement('div');
+        bottomRow.className = 'w-full pt-2 mt-1 border-t border-slate-200/60 flex items-center justify-between';
+
+        if (item.revealed || item.inCart) {
+          const priceSpan = document.createElement('span');
+          priceSpan.className = 'text-xs sm:text-sm font-bold text-teal-700 tabular-nums';
+          priceSpan.textContent = `${t('fromPrefix')}${fmtMoney(item.basePrice)}${t('fromSuffix')}`;
+
+          const actionHint = document.createElement('span');
+          actionHint.className = 'text-xs font-medium text-slate-500';
+          actionHint.textContent = isCurrent ? t('quotingNow') : t('clickToConfig');
+
+          bottomRow.appendChild(priceSpan);
+          bottomRow.appendChild(actionHint);
+        } else {
+          const hiddenSpan = document.createElement('span');
+          hiddenSpan.className = 'text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80';
+          hiddenSpan.textContent = t('clickToReveal');
+          bottomRow.appendChild(hiddenSpan);
+        }
+
+        card.appendChild(topRow);
+        card.appendChild(bodyRow);
+        card.appendChild(bottomRow);
+
+        card.addEventListener('click', () => {
+          activeServiceId = item.id;
+          item.revealed = true;
+          renderAll();
+        });
+
+        serviceGridEl.appendChild(card);
+      });
+    }
+
+    // Render Preliminary Quote Panel ('初步估價' / 'Preliminary Estimate')
+    function renderModifierDrawer() {
+      modifierPanelEl.replaceChildren();
+      const item = catalog.find(s => s.id === activeServiceId) || catalog[0];
+      if (!item) return;
+
+      const header = document.createElement('div');
+      header.className = 'flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200';
+
+      const leftHdr = document.createElement('div');
+      const badge = document.createElement('span');
+      badge.className = 'text-xs font-bold text-teal-600 uppercase tracking-wider';
+      badge.textContent = t('prelimBadge');
+
+      const title = document.createElement('h3');
+      title.className = 'text-base sm:text-lg font-bold text-slate-900 mt-0.5';
+      title.textContent = item.revealed || item.inCart
+        ? `${itemName(item)} (${t('fromPrefix')}${fmtMoney(item.basePrice)}${t('fromSuffix')})`
+        : `${itemName(item)} (${t('prelimClickHint')})`;
+
+      leftHdr.appendChild(badge);
+      leftHdr.appendChild(title);
+
+      const rightHdr = document.createElement('div');
+      rightHdr.className = 'text-right';
+      const subLabel = document.createElement('div');
+      subLabel.className = 'text-xs text-slate-500';
+      subLabel.textContent = t('prelimUnitLabel');
+      const subVal = document.createElement('div');
+      subVal.className = 'text-lg sm:text-xl font-bold text-teal-600 tabular-nums';
+      subVal.textContent = (item.revealed || item.inCart) ? fmtMoney(calcServiceTotal(item)) : t('prelimClickSpecHint');
+      rightHdr.appendChild(subLabel);
+      rightHdr.appendChild(subVal);
+
+      header.appendChild(leftHdr);
+      header.appendChild(rightHdr);
+      modifierPanelEl.appendChild(header);
+
+      // 1. Single-Choice Tiers
+      const tierSection = document.createElement('div');
+      tierSection.className = 'mt-4';
+      const tierTitle = document.createElement('div');
+      tierTitle.className = 'text-xs font-bold text-slate-700 uppercase tracking-wider mb-2';
+      tierTitle.textContent = t('tierHeading');
+      tierSection.appendChild(tierTitle);
+
+      const tierGrid = document.createElement('div');
+      tierGrid.className = 'grid grid-cols-1 sm:grid-cols-3 gap-2';
+      item.tiers.forEach(tier => {
+        const isSel = item.selectedTier === tier.id;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+          isSel
+            ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
+            : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+        }`;
+
+        const tName = document.createElement('div');
+        tName.className = 'text-xs font-semibold leading-snug';
+        tName.textContent = tierLabel(tier);
+
+        const tAdd = document.createElement('div');
+        tAdd.className = `text-xs font-bold mt-1.5 tabular-nums ${isSel ? 'text-teal-100' : 'text-teal-700'}`;
+        tAdd.textContent = tier.add === 0 ? `${t('basePricePrefix')}${fmtMoney(item.basePrice)}` : `+ ${fmtMoney(tier.add)}`;
+
+        btn.appendChild(tName);
+        btn.appendChild(tAdd);
+        btn.addEventListener('click', () => {
+          item.revealed = true;
+          item.selectedTier = tier.id;
+          item.inCart = true;
+          renderAll();
+        });
+        tierGrid.appendChild(btn);
+      });
+      tierSection.appendChild(tierGrid);
+      modifierPanelEl.appendChild(tierSection);
+
+      // 2. Multi-Choice Add-ons
+      const addonSection = document.createElement('div');
+      addonSection.className = 'mt-4';
+      const addonTitle = document.createElement('div');
+      addonTitle.className = 'text-xs font-bold text-slate-700 uppercase tracking-wider mb-2';
+      addonTitle.textContent = t('addonHeading');
+      addonSection.appendChild(addonTitle);
+
+      const addonGrid = document.createElement('div');
+      addonGrid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-2';
+      item.addons.forEach(addon => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `px-3.5 py-2.5 rounded-xl border text-left transition flex items-center justify-between gap-2 ${
+          addon.checked
+            ? 'bg-emerald-50 border-emerald-500 text-emerald-950 font-semibold'
+            : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+        }`;
+
+        const leftSpan = document.createElement('span');
+        leftSpan.className = 'text-xs leading-snug';
+        leftSpan.textContent = (addon.checked ? '✓ ' : '+ ') + addonLabel(addon);
+
+        const rightSpan = document.createElement('span');
+        rightSpan.className = `text-xs font-bold whitespace-nowrap tabular-nums ${addon.checked ? 'text-emerald-700' : 'text-slate-500'}`;
+        rightSpan.textContent = '+' + fmtMoney(addon.price);
+
+        btn.appendChild(leftSpan);
+        btn.appendChild(rightSpan);
+
+        btn.addEventListener('click', () => {
+          item.revealed = true;
+          addon.checked = !addon.checked;
+          item.inCart = true;
+          renderAll();
+        });
+        addonGrid.appendChild(btn);
+      });
+      addonSection.appendChild(addonGrid);
+      modifierPanelEl.appendChild(addonSection);
+
+      // 3. Quantity, Item Note & Add/Remove Toggle
+      const bottomBar = document.createElement('div');
+      bottomBar.className = 'mt-4 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3';
+
+      const leftControls = document.createElement('div');
+      leftControls.className = 'flex flex-wrap items-center gap-3 flex-1';
+
+      const qtyBox = document.createElement('div');
+      qtyBox.className = 'flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200';
+
+      const btnMinus = document.createElement('button');
+      btnMinus.type = 'button';
+      btnMinus.className = 'w-7 h-7 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm shadow-2xs';
+      btnMinus.textContent = '-';
+      btnMinus.addEventListener('click', () => {
+        item.qty = Math.max(1, (item.qty || 1) - 1);
+        renderAll();
+      });
+
+      const qtyText = document.createElement('span');
+      qtyText.className = 'px-3 text-xs font-bold tabular-nums';
+      qtyText.textContent = `${t('qtyLabel')}: ${item.qty || 1}`;
+
+      const btnPlus = document.createElement('button');
+      btnPlus.type = 'button';
+      btnPlus.className = 'w-7 h-7 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm shadow-2xs';
+      btnPlus.textContent = '+';
+      btnPlus.addEventListener('click', () => {
+        item.revealed = true;
+        item.qty = (item.qty || 1) + 1;
+        item.inCart = true;
+        renderAll();
+      });
+
+      qtyBox.appendChild(btnMinus);
+      qtyBox.appendChild(qtyText);
+      qtyBox.appendChild(btnPlus);
+
+      const noteInput = document.createElement('input');
+      noteInput.type = 'text';
+      noteInput.placeholder = t('itemNotePlaceholder');
+      noteInput.value = item.note || '';
+      noteInput.className = 'flex-1 min-w-[160px] text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-500';
+      noteInput.addEventListener('input', e => {
+        item.note = e.target.value;
+        renderTicket();
+      });
+
+      leftControls.appendChild(qtyBox);
+      leftControls.appendChild(noteInput);
+
+      const toggleCartBtn = document.createElement('button');
+      toggleCartBtn.type = 'button';
+      toggleCartBtn.className = `px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm transition shadow-xs ${
+        item.inCart
+          ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
+          : 'bg-teal-600 hover:bg-teal-500 text-white'
+      }`;
+      toggleCartBtn.textContent = item.inCart ? t('removeFromCart') : t('addToCart');
+      toggleCartBtn.addEventListener('click', () => {
+        item.revealed = true;
+        item.inCart = !item.inCart;
+        renderAll();
+      });
+
+      bottomBar.appendChild(leftControls);
+      bottomBar.appendChild(toggleCartBtn);
+      modifierPanelEl.appendChild(bottomBar);
+    }
+
+    // Update Totals & Payment Schedule Summary Box
+    function renderTicketSummaryOnly() {
+      const cartItems = catalog.filter(s => s.inCart);
+      const grandTotal = cartItems.reduce((sum, item) => sum + calcServiceTotal(item), 0);
+      document.getElementById('summary-count-text').textContent = t('selectedCount')(cartItems.length);
+      document.getElementById('summary-subtotal').textContent = fmtMoney(grandTotal);
+      document.getElementById('summary-grand-total').textContent = fmtMoney(grandTotal);
+
+      const modeObj = paymentModes[selectedPaymentMode] || Object.values(paymentModes)[0];
+      if (!modeObj) return;
+      const arrangeStr = currentLang === 'en' ? (modeObj.arrangementEn || modeObj.arrangement) : modeObj.arrangement;
+
+      document.getElementById('schedule-mode-title').textContent = `${t('scheduleModePrefix')}${modeObj.label}`;
+      document.getElementById('schedule-mode-desc').textContent = arrangeStr;
+
+      const stagesListEl = document.getElementById('schedule-stages-list');
+      stagesListEl.replaceChildren();
+
+      modeObj.stages.forEach(st => {
+        const stRow = document.createElement('div');
+        stRow.className = 'flex items-center justify-between text-teal-950';
+
+        const stName = document.createElement('span');
+        stName.textContent = currentLang === 'en' ? (st.nameEn || st.name) : st.name;
+
+        const stAmt = document.createElement('span');
+        stAmt.className = 'font-bold tabular-nums';
+        stAmt.textContent = fmtMoney(Math.round(grandTotal * ((Number(st.pct) || 0) / 100)));
+
+        stRow.appendChild(stName);
+        stRow.appendChild(stAmt);
+        stagesListEl.appendChild(stRow);
+      });
+    }
+
+    // Render Right Order Ticket & Payment Schedule Breakdown
+    function renderTicket() {
+      ticketItemsListEl.replaceChildren();
+      const cartItems = catalog.filter(s => s.inCart);
+
+      if (cartItems.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'py-8 text-center text-slate-400 text-xs sm:text-sm';
+        empty.textContent = t('emptyTicket');
+        ticketItemsListEl.appendChild(empty);
+      } else {
+        cartItems.forEach((item, idx) => {
+          const tier = item.tiers.find(x => x.id === item.selectedTier) || item.tiers[0];
+          const checkedAddons = item.addons.filter(a => a.checked);
+          const itemTotal = calcServiceTotal(item);
+
+          const row = document.createElement('div');
+          row.className = 'py-3 flex flex-col gap-1';
+
+          const topLine = document.createElement('div');
+          topLine.className = 'flex items-baseline justify-between gap-2';
+
+          const nameWrap = document.createElement('div');
+          nameWrap.className = 'font-bold text-sm text-slate-900';
+          nameWrap.textContent = `${idx + 1}. ${itemName(item)}` + (item.qty > 1 ? ` × ${item.qty}` : '');
+
+          const priceWrap = document.createElement('div');
+          priceWrap.className = 'font-bold text-sm text-slate-900 tabular-nums';
+          priceWrap.textContent = fmtMoney(itemTotal);
+
+          topLine.appendChild(nameWrap);
+          topLine.appendChild(priceWrap);
+          row.appendChild(topLine);
+
+          const specLine = document.createElement('div');
+          specLine.className = 'text-xs text-slate-600 pl-3 border-l-2 border-teal-200 space-y-0.5 mt-0.5';
+
+          if (tier) {
+            const tierDiv = document.createElement('div');
+            tierDiv.textContent = `• ${t('specPrefix')}${tierLabel(tier)} (${fmtMoney(item.basePrice + tier.add)})`;
+            specLine.appendChild(tierDiv);
+          }
+
+          checkedAddons.forEach(a => {
+            const aDiv = document.createElement('div');
+            aDiv.className = 'text-emerald-700';
+            aDiv.textContent = `• ${t('addonPrefix')}${addonLabel(a)} (+${fmtMoney(a.price)})`;
+            specLine.appendChild(aDiv);
+          });
+
+          if (item.note && item.note.trim()) {
+            const nDiv = document.createElement('div');
+            nDiv.className = 'text-slate-500 italic';
+            nDiv.textContent = `• ${t('notePrefix')}${item.note.trim()}`;
+            specLine.appendChild(nDiv);
+          }
+
+          row.appendChild(specLine);
+
+          const actLine = document.createElement('div');
+          actLine.className = 'flex items-center justify-end gap-2 mt-1';
+
+          const editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-teal-700 transition';
+          editBtn.textContent = t('btnEditSpec');
+          editBtn.addEventListener('click', () => {
+            currentCategory = item.cat;
+            activeServiceId = item.id;
+            renderAll();
+          });
+
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition';
+          removeBtn.textContent = t('btnRemove');
+          removeBtn.addEventListener('click', () => {
+            item.inCart = false;
+            renderAll();
+          });
+
+          actLine.appendChild(editBtn);
+          actLine.appendChild(removeBtn);
+          row.appendChild(actLine);
+
+          ticketItemsListEl.appendChild(row);
+        });
+      }
+
+      renderTicketSummaryOnly();
+    }
+
+    // Build Formatted WhatsApp Quote Text (Bilingual, without state URL)
+    function buildWhatsAppQuoteText() {
+      const cartItems = catalog.filter(s => s.inCart);
+      const grandTotal = cartItems.reduce((sum, item) => sum + calcServiceTotal(item), 0);
+      const modeObj = paymentModes[selectedPaymentMode] || Object.values(paymentModes)[0];
+
+      const client = clientNameEl.value.trim() || (currentLang === 'en' ? 'Valued Client' : '貴客戶');
+      const note = projectTitleEl.value.trim() || (currentLang === 'en' ? 'Design Quotation' : '設計服務報價');
+      const lines = [
+        t('waHeader'),
+        `${t('clientLabel')}: ${client}`,
+        `${t('noteLabel')}: ${note}`,
+        `--------------------------`
+      ];
+
+      if (cartItems.length === 0) {
+        lines.push(currentLang === 'en' ? `(No services selected)` : `（尚未選取任何服務項目）`);
+      } else {
+        cartItems.forEach((item, i) => {
+          const tier = item.tiers.find(x => x.id === item.selectedTier) || item.tiers[0];
+          const checkedAddons = item.addons.filter(a => a.checked);
+          lines.push(`*${i + 1}. ${itemName(item)}* ${item.qty > 1 ? `(×${item.qty})` : ''} — *${fmtMoney(calcServiceTotal(item))}*`);
+          if (tier) lines.push(`   ▸ ${t('specPrefix')}${tierLabel(tier)}`);
+          if (checkedAddons.length > 0) {
+            lines.push(`   ▸ ${t('addonPrefix')}${checkedAddons.map(a => addonLabel(a)).join(', ')}`);
+          }
+          if (item.note && item.note.trim()) {
+            lines.push(`   ▸ ${t('notePrefix')}${item.note.trim()}`);
+          }
+        });
+      }
+
+      const arrangeStr = currentLang === 'en' ? (modeObj.arrangementEn || modeObj.arrangement) : modeObj.arrangement;
+      lines.push(`--------------------------`);
+      lines.push(`*${t('grandTotal')}: ${fmtMoney(grandTotal)}*`);
+      lines.push(`${t('paymentModeLabel')}: ${modeObj.label} (${arrangeStr})`);
+      modeObj.stages.forEach(st => {
+        const sName = currentLang === 'en' ? (st.nameEn || st.name) : st.name;
+        lines.push(`• ${sName}: ${fmtMoney(Math.round(grandTotal * ((Number(st.pct) || 0) / 100)))}`);
+      });
+
+      return lines.join('\n');
+    }
+
+    // Generate High-Resolution PNG Image of the Quote Receipt using Native HTML5 2D Canvas
+    function wrapCanvasText(ctx, text, maxWidth) {
+      const chars = Array.from(text || '');
+      const lines = [];
+      let current = '';
+      for (const ch of chars) {
+        const test = current + ch;
+        if (ctx.measureText(test).width > maxWidth && current.length > 0) {
+          lines.push(current);
+          current = ch;
+        } else {
+          current = test;
+        }
+      }
+      if (current) lines.push(current);
+      return lines.length > 0 ? lines : [''];
+    }
+
+    function generateReceiptPngDataUrl() {
+      const cartItems = catalog.filter(s => s.inCart);
+      const grandTotal = cartItems.reduce((sum, item) => sum + calcServiceTotal(item), 0);
+      const modeObj = paymentModes[selectedPaymentMode] || Object.values(paymentModes)[0];
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const client = clientNameEl.value.trim() || '-';
+      const note = projectTitleEl.value.trim() || '-';
+
+      const width = 640;
+      const pad = 36;
+      const contentWidth = width - pad * 2;
+
+      // Measure height dynamically first
+      const tempCanvas = document.createElement('canvas');
+      const mCtx = tempCanvas.getContext('2d');
+
+      let y = 128; // Header + Client Info block
+      y += 42; // Section Header
+
+      const itemBlocks = [];
+      if (cartItems.length === 0) {
+        y += 50;
+      } else {
+        cartItems.forEach((item, idx) => {
+          const tier = item.tiers.find(x => x.id === item.selectedTier) || item.tiers[0];
+          const checkedAddons = item.addons.filter(a => a.checked);
+          const itemTotal = calcServiceTotal(item);
+          const titleStr = `${idx + 1}. ${itemName(item)}${item.qty > 1 ? ` × ${item.qty}` : ''}`;
+          const priceStr = fmtMoney(itemTotal);
+
+          mCtx.font = '500 14px Inter, "Noto Sans TC", sans-serif';
+          const detailLines = [];
+          if (tier) {
+            const tLines = wrapCanvasText(mCtx, `• ${t('specPrefix')}${tierLabel(tier)} (${fmtMoney(item.basePrice + tier.add)})`, contentWidth - 20);
+            detailLines.push(...tLines.map(l => ({ text: l, color: '#475569' })));
+          }
+          checkedAddons.forEach(a => {
+            const aLines = wrapCanvasText(mCtx, `• ${t('addonPrefix')}${addonLabel(a)} (+${fmtMoney(a.price)})`, contentWidth - 20);
+            detailLines.push(...aLines.map(l => ({ text: l, color: '#047857' })));
+          });
+          if (item.note && item.note.trim()) {
+            const nLines = wrapCanvasText(mCtx, `• ${t('notePrefix')}${item.note.trim()}`, contentWidth - 20);
+            detailLines.push(...nLines.map(l => ({ text: l, color: '#64748b' })));
+          }
+
+          const blockHeight = 28 + detailLines.length * 22 + 16;
+          itemBlocks.push({ titleStr, priceStr, detailLines, blockHeight });
+          y += blockHeight;
+        });
+      }
+
+      const stageCount = modeObj ? modeObj.stages.length : 0;
+      const scheduleBoxHeight = 48 + stageCount * 26 + 16;
+      const totalHeight = y + 95 + scheduleBoxHeight + 48;
+
+      const scale = 2; // Retina 2x resolution
+      const canvas = document.createElement('canvas');
+      canvas.width = width * scale;
+      canvas.height = totalHeight * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+
+      // Outer white card background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, totalHeight);
+
+      // Top Dark Banner
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, width, 82);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 20px Inter, "Noto Sans TC", sans-serif';
+      ctx.fillText(t('ticketTitle'), pad, 38);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '500 13px Inter, "Noto Sans TC", sans-serif';
+      ctx.fillText(`${t('datePrefix')}${dateStr}`, pad, 62);
+
+      // Client & Note Bar
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 82, width, 54);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, 136);
+      ctx.lineTo(width, 136);
+      ctx.stroke();
+
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 13px Inter, "Noto Sans TC", sans-serif';
+      ctx.fillText(`${t('clientLabel')}: `, pad, 114);
+      const cLabelW = ctx.measureText(`${t('clientLabel')}: `).width;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(client, pad + cLabelW, 114);
+
+      ctx.fillStyle = '#475569';
+      ctx.fillText(`${t('noteLabel')}: `, width / 2, 114);
+      const nLabelW = ctx.measureText(`${t('noteLabel')}: `).width;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(note, width / 2 + nLabelW, 114);
+
+      // Items Table Header
+      let curY = 166;
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 12px Inter, "Noto Sans TC", sans-serif';
+      ctx.fillText(t('colItems'), pad, curY);
+      ctx.textAlign = 'right';
+      ctx.fillText(t('colSubtotal'), width - pad, curY);
+      ctx.textAlign = 'left';
+
+      curY += 12;
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.beginPath();
+      ctx.moveTo(pad, curY);
+      ctx.lineTo(width - pad, curY);
+      ctx.stroke();
+      curY += 22;
+
+      // Render Each Item Block
+      if (itemBlocks.length === 0) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '500 14px Inter, "Noto Sans TC", sans-serif';
+        ctx.fillText(t('emptyTicket'), pad, curY + 12);
+        curY += 44;
+      } else {
+        itemBlocks.forEach(b => {
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 15px Inter, "Noto Sans TC", sans-serif';
+          ctx.fillText(b.titleStr, pad, curY);
+
+          ctx.textAlign = 'right';
+          ctx.fillText(b.priceStr, width - pad, curY);
+          ctx.textAlign = 'left';
+
+          curY += 22;
+          ctx.font = '500 13px Inter, "Noto Sans TC", sans-serif';
+          b.detailLines.forEach(dl => {
+            ctx.fillStyle = dl.color;
+            ctx.fillText(dl.text, pad + 10, curY);
+            curY += 21;
+          });
+
+          curY += 6;
+          ctx.strokeStyle = '#f1f5f9';
+          ctx.beginPath();
+          ctx.moveTo(pad, curY);
+          ctx.lineTo(width - pad, curY);
+          ctx.stroke();
+          curY += 18;
+        });
+      }
+
+      // Subtotal & Grand Total
+      curY += 6;
+      ctx.fillStyle = '#475569';
+      ctx.font = '500 14px Inter, "Noto Sans TC", sans-serif';
+      ctx.fillText(t('selectedCount')(cartItems.length), pad, curY);
+      ctx.textAlign = 'right';
+      ctx.fillText(fmtMoney(grandTotal), width - pad, curY);
+      ctx.textAlign = 'left';
+
+      curY += 16;
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.beginPath();
+      ctx.moveTo(pad, curY);
+      ctx.lineTo(width - pad, curY);
+      ctx.stroke();
+
+      curY += 32;
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 17px Inter, "Noto Sans TC", sans-serif';
+      ctx.fillText(t('grandTotal'), pad, curY);
+
+      ctx.fillStyle = '#0d9488';
+      ctx.font = 'bold 24px Inter, "Noto Sans TC", sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(fmtMoney(grandTotal), width - pad, curY);
+      ctx.textAlign = 'left';
+
+      // Payment Schedule Box
+      curY += 22;
+      if (modeObj) {
+        ctx.fillStyle = '#f0fdfa';
+        ctx.strokeStyle = '#99f6e4';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(pad, curY, contentWidth, scheduleBoxHeight - 10, 12);
+        ctx.fill();
+        ctx.stroke();
+
+        let boxY = curY + 24;
+        ctx.fillStyle = '#134e4a';
+        ctx.font = 'bold 13px Inter, "Noto Sans TC", sans-serif';
+        ctx.fillText(`${t('scheduleModePrefix')}${modeObj.label}`, pad + 16, boxY);
+
+        const arrangeStr = currentLang === 'en' ? (modeObj.arrangementEn || modeObj.arrangement) : modeObj.arrangement;
+        ctx.fillStyle = '#0f766e';
+        ctx.font = '500 12px Inter, "Noto Sans TC", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(arrangeStr, width - pad - 16, boxY);
+        ctx.textAlign = 'left';
+
+        boxY += 12;
+        ctx.strokeStyle = '#ccfbf1';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad + 16, boxY);
+        ctx.lineTo(width - pad - 16, boxY);
+        ctx.stroke();
+
+        boxY += 20;
+        modeObj.stages.forEach(st => {
+          const sName = currentLang === 'en' ? (st.nameEn || st.name) : st.name;
+          const sAmt = fmtMoney(Math.round(grandTotal * ((Number(st.pct) || 0) / 100)));
+          ctx.fillStyle = '#134e4a';
+          ctx.font = '500 13px Inter, "Noto Sans TC", sans-serif';
+          ctx.fillText(sName, pad + 16, boxY);
+
+          ctx.font = 'bold 13px Inter, "Noto Sans TC", sans-serif';
+          ctx.textAlign = 'right';
+          ctx.fillText(sAmt, width - pad - 16, boxY);
+          ctx.textAlign = 'left';
+          boxY += 24;
+        });
+      }
+
+      return canvas.toDataURL('image/png');
+    }
+
+    // Render Menu & Payment Modes Editor Modal (All modifications housed inside '管理員登入')
+    function renderMenuEditor() {
+      const pinGate = document.getElementById('admin-pin-gate');
+      const editorBody = document.getElementById('admin-editor-body');
+      const saveCloudBtn = document.getElementById('btn-save-cloud');
+      const lockBtn = document.getElementById('btn-lock-admin');
+
+      if (!adminUnlocked) {
+        pinGate.classList.remove('hidden');
+        pinGate.classList.add('flex');
+        editorBody.classList.add('hidden');
+        saveCloudBtn.classList.add('hidden');
+        lockBtn.classList.add('hidden');
+        return;
+      } else {
+        pinGate.classList.add('hidden');
+        pinGate.classList.remove('flex');
+        editorBody.classList.remove('hidden');
+        saveCloudBtn.classList.remove('hidden');
+        lockBtn.classList.remove('hidden');
+      }
+
+      // Render Editable Payment Modes List (with full stage-by-stage editing in Admin)
+      const pmListEl = document.getElementById('editor-payment-modes-list');
+      pmListEl.replaceChildren();
+
+      Object.keys(paymentModes).forEach(pmKey => {
+        const m = paymentModes[pmKey];
+        const card = document.createElement('div');
+        card.className = 'p-3.5 bg-white rounded-xl border border-indigo-200/80 space-y-2.5';
+
+        const topGrid = document.createElement('div');
+        topGrid.className = 'grid grid-cols-1 sm:grid-cols-12 gap-2 items-center';
+
+        const labelInp = document.createElement('input');
+        labelInp.type = 'text';
+        labelInp.value = m.label;
+        labelInp.title = '模式名稱';
+        labelInp.className = 'sm:col-span-3 text-xs font-bold text-indigo-700 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5';
+        labelInp.addEventListener('input', e => {
+          m.label = e.target.value;
+          updateJsonPreviewBox();
+          renderAll();
+        });
+
+        const arrangeInp = document.createElement('input');
+        arrangeInp.type = 'text';
+        arrangeInp.value = m.arrangement;
+        arrangeInp.title = '付款安排說明';
+        arrangeInp.className = 'sm:col-span-5 text-xs bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5';
+        arrangeInp.addEventListener('input', e => {
+          m.arrangement = e.target.value;
+          m.optionZh = `${m.label} — ${m.arrangement}`;
+          updateJsonPreviewBox();
+          renderAll();
+        });
+
+        const usageInp = document.createElement('input');
+        usageInp.type = 'text';
+        usageInp.value = m.usage;
+        usageInp.title = '後台常見用途備註';
+        usageInp.className = 'sm:col-span-3 text-xs text-slate-600 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5';
+        usageInp.addEventListener('input', e => {
+          m.usage = e.target.value;
+          updateJsonPreviewBox();
+        });
+
+        const delPmBtn = document.createElement('button');
+        delPmBtn.type = 'button';
+        delPmBtn.className = 'sm:col-span-1 py-1.5 px-2 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-semibold transition';
+        delPmBtn.textContent = '刪除';
+        delPmBtn.addEventListener('click', () => {
+          if (Object.keys(paymentModes).length <= 1) {
+            showToast('至少需保留 1 種定金及付款模式');
+            return;
+          }
+          delete paymentModes[pmKey];
+          selectedPaymentMode = Object.keys(paymentModes)[0];
+          renderMenuEditor();
+          renderAll();
+          showToast('已刪除該付款模式');
+        });
+
+        topGrid.appendChild(labelInp);
+        topGrid.appendChild(arrangeInp);
+        topGrid.appendChild(usageInp);
+        topGrid.appendChild(delPmBtn);
+        card.appendChild(topGrid);
+
+        // Stage-by-Stage Editor inside Admin Payment Mode Card
+        const stagesBox = document.createElement('div');
+        stagesBox.className = 'pt-2 border-t border-slate-100 space-y-1.5';
+
+        const stagesHeader = document.createElement('div');
+        stagesHeader.className = 'flex items-center justify-between text-[11px] text-slate-500';
+        const totalPct = m.stages.reduce((acc, s) => acc + (Number(s.pct) || 0), 0);
+        const sumSpan = document.createElement('span');
+        sumSpan.className = `font-bold ${totalPct === 100 ? 'text-teal-700' : 'text-amber-600'}`;
+        sumSpan.textContent = `各階段明細（比例總和：${totalPct}%）`;
+
+        const addStBtn = document.createElement('button');
+        addStBtn.type = 'button';
+        addStBtn.className = 'text-[11px] font-semibold text-indigo-600 hover:text-indigo-500';
+        addStBtn.textContent = '+ 新增付款階段';
+        addStBtn.addEventListener('click', () => {
+          const nextIdx = m.stages.length + 1;
+          m.stages.push({
+            name: `第 ${nextIdx} 階段（尾款）`,
+            nameEn: `Stage ${nextIdx} (Installment)`,
+            pct: 10
+          });
+          m.label = m.stages.map(x => `${x.pct}%`).join(' / ');
+          renderMenuEditor();
+          renderAll();
+        });
+
+        stagesHeader.appendChild(sumSpan);
+        stagesHeader.appendChild(addStBtn);
+        stagesBox.appendChild(stagesHeader);
+
+        m.stages.forEach((st, sIdx) => {
+          const sRow = document.createElement('div');
+          sRow.className = 'flex items-center gap-2';
+
+          const sNameInp = document.createElement('input');
+          sNameInp.type = 'text';
+          sNameInp.value = st.name;
+          sNameInp.className = 'flex-1 text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1';
+          sNameInp.addEventListener('input', e => {
+            st.name = e.target.value;
+            updateJsonPreviewBox();
+            renderAll();
+          });
+
+          const sPctWrap = document.createElement('div');
+          sPctWrap.className = 'flex items-center bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 w-24';
+          const sPctInp = document.createElement('input');
+          sPctInp.type = 'number';
+          sPctInp.min = '0';
+          sPctInp.max = '100';
+          sPctInp.step = '5';
+          sPctInp.value = String(st.pct);
+          sPctInp.className = 'w-full text-xs font-bold text-teal-700 bg-transparent tabular-nums text-right focus:outline-none';
+          sPctInp.addEventListener('input', e => {
+            const val = parseFloat(e.target.value);
+            st.pct = isNaN(val) ? 0 : val;
+            const newSum = m.stages.reduce((acc, s) => acc + (Number(s.pct) || 0), 0);
+            sumSpan.textContent = `各階段明細（比例總和：${newSum}%）`;
+            sumSpan.className = `font-bold ${newSum === 100 ? 'text-teal-700' : 'text-amber-600'}`;
+            updateJsonPreviewBox();
+            renderAll();
+          });
+          const pctSym = document.createElement('span');
+          pctSym.className = 'text-xs text-slate-400 ml-0.5';
+          pctSym.textContent = '%';
+          sPctWrap.appendChild(sPctInp);
+          sPctWrap.appendChild(pctSym);
+
+          const delStBtn = document.createElement('button');
+          delStBtn.type = 'button';
+          delStBtn.className = 'px-2 py-1 rounded bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white text-xs font-bold';
+          delStBtn.textContent = '×';
+          delStBtn.addEventListener('click', () => {
+            if (m.stages.length <= 1) {
+              showToast('至少需保留 1 個階段');
+              return;
+            }
+            m.stages.splice(sIdx, 1);
+            renderMenuEditor();
+            renderAll();
+          });
+
+          sRow.appendChild(sNameInp);
+          sRow.appendChild(sPctWrap);
+          sRow.appendChild(delStBtn);
+          stagesBox.appendChild(sRow);
+        });
+
+        card.appendChild(stagesBox);
+        pmListEl.appendChild(card);
+      });
+
+      // Render Services List
+      const listEl = document.getElementById('editor-service-list');
+      listEl.replaceChildren();
+
+      catalog.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3';
+
+        const topRow = document.createElement('div');
+        topRow.className = 'flex flex-wrap items-center justify-between gap-3';
+
+        const info = document.createElement('div');
+        const title = document.createElement('div');
+        title.className = 'font-bold text-sm text-slate-900 flex items-center gap-2';
+        title.textContent = `[${item.catName}] ${item.name}`;
+
+        const sub = document.createElement('div');
+        sub.className = 'text-xs text-slate-500';
+        sub.textContent = `${item.tiers.length} 種必選規格 ｜ ${item.addons.length} 項加購服務`;
+        info.appendChild(title);
+        info.appendChild(sub);
+
+        const rightControls = document.createElement('div');
+        rightControls.className = 'flex flex-wrap items-center gap-2';
+
+        const lbl = document.createElement('label');
+        lbl.className = 'text-xs font-semibold text-slate-600';
+        lbl.textContent = 'From 底價 (RM):';
+
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.min = '0';
+        inp.step = '10';
+        inp.value = String(item.basePrice);
+        inp.className = 'w-24 text-sm font-bold text-teal-700 bg-white border border-slate-300 rounded-lg px-2.5 py-1 tabular-nums focus:outline-none focus:border-teal-500';
+        inp.addEventListener('input', () => {
+          const val = parseInt(inp.value, 10);
+          if (!isNaN(val) && val >= 0) {
+            item.basePrice = val;
+            updateJsonPreviewBox();
+            renderAll();
+          }
+        });
+
+        const delSvcBtn = document.createElement('button');
+        delSvcBtn.type = 'button';
+        delSvcBtn.className = 'px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 text-xs font-semibold transition';
+        delSvcBtn.textContent = '刪除服務';
+        delSvcBtn.addEventListener('click', () => {
+          if (catalog.length <= 1) {
+            showToast('至少需保留 1 項設計服務');
+            return;
+          }
+          catalog.splice(idx, 1);
+          if (activeServiceId === item.id) {
+            activeServiceId = catalog[0].id;
+          }
+          renderMenuEditor();
+          renderAll();
+          showToast(`已刪除「${item.name}」`);
+        });
+
+        rightControls.appendChild(lbl);
+        rightControls.appendChild(inp);
+        rightControls.appendChild(delSvcBtn);
+
+        topRow.appendChild(info);
+        topRow.appendChild(rightControls);
+        card.appendChild(topRow);
+
+        // Existing Add-ons Pills with One-Click Delete
+        if (item.addons.length > 0) {
+          const addonPills = document.createElement('div');
+          addonPills.className = 'flex flex-wrap gap-1.5 pt-1';
+          item.addons.forEach((ad, aIdx) => {
+            const pill = document.createElement('span');
+            pill.className = 'inline-flex items-center gap-1.5 text-[11px] bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700';
+            pill.textContent = `${ad.label} (+RM ${ad.price})`;
+
+            const delAdBtn = document.createElement('button');
+            delAdBtn.type = 'button';
+            delAdBtn.className = 'text-rose-500 hover:text-rose-700 font-bold px-1';
+            delAdBtn.textContent = '×';
+            delAdBtn.title = '刪除此加購細項';
+            delAdBtn.addEventListener('click', () => {
+              item.addons.splice(aIdx, 1);
+              renderMenuEditor();
+              renderAll();
+            });
+
+            pill.appendChild(delAdBtn);
+            addonPills.appendChild(pill);
+          });
+          card.appendChild(addonPills);
+        }
+
+        // Quick Add Add-on Row (Bilingual)
+        const addAddonRow = document.createElement('div');
+        addAddonRow.className = 'pt-2 border-t border-slate-200/80 flex flex-wrap items-center gap-2';
+
+        const addonNameInp = document.createElement('input');
+        addonNameInp.type = 'text';
+        addonNameInp.placeholder = `新增加購名稱 (中文)...`;
+        addonNameInp.className = 'flex-1 min-w-[130px] text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5';
+
+        const addonNameEnInp = document.createElement('input');
+        addonNameEnInp.type = 'text';
+        addonNameEnInp.placeholder = `English Add-on Name...`;
+        addonNameEnInp.className = 'flex-1 min-w-[130px] text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5';
+
+        const addonPriceInp = document.createElement('input');
+        addonPriceInp.type = 'number';
+        addonPriceInp.min = '0';
+        addonPriceInp.step = '10';
+        addonPriceInp.placeholder = '加購價 RM';
+        addonPriceInp.className = 'w-24 text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 tabular-nums';
+
+        const addAddonBtn = document.createElement('button');
+        addAddonBtn.type = 'button';
+        addAddonBtn.className = 'px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold';
+        addAddonBtn.textContent = '+ 新增加購細項';
+        addAddonBtn.addEventListener('click', () => {
+          const aLabel = addonNameInp.value.trim();
+          const aLabelEn = addonNameEnInp.value.trim() || aLabel;
+          const aPrice = parseInt(addonPriceInp.value, 10) || 0;
+          if (!aLabel) {
+            showToast('請輸入加購項目名稱');
+            return;
+          }
+          item.addons.push({
+            id: 'addon_' + Date.now(),
+            label: aLabel,
+            labelEn: aLabelEn,
+            price: aPrice,
+            checked: false
+          });
+          renderMenuEditor();
+          renderAll();
+          showToast(`已為 ${item.name} 新增加購細項！`);
+        });
+
+        addAddonRow.appendChild(addonNameInp);
+        addAddonRow.appendChild(addonNameEnInp);
+        addAddonRow.appendChild(addonPriceInp);
+        addAddonRow.appendChild(addAddonBtn);
+        card.appendChild(addAddonRow);
+
+        listEl.appendChild(card);
+      });
+
+      updateJsonPreviewBox();
+    }
+
+    function updateJsonPreviewBox() {
+      const box = document.getElementById('json-config-box');
+      if (box) {
+        box.value = JSON.stringify({ catalog, paymentModes }, null, 2);
+      }
+    }
+
+    function renderAll() {
+      applyStaticTranslations();
+      renderMainCategories();
+      renderServiceGrid();
+      renderModifierDrawer();
+      renderTicket();
+    }
+
+    // Language Switcher Events
+    document.getElementById('btn-lang-zh').addEventListener('click', () => {
+      currentLang = 'zh';
+      renderAll();
+    });
+
+    document.getElementById('btn-lang-en').addEventListener('click', () => {
+      currentLang = 'en';
+      renderAll();
+    });
+
+    // Add New Payment Mode in Admin Modal
+    document.getElementById('btn-add-new-pm').addEventListener('click', () => {
+      const lbl = document.getElementById('new-pm-label').value.trim();
+      const arr = document.getElementById('new-pm-arrange').value.trim();
+      const use = document.getElementById('new-pm-usage').value.trim() || '客製設計專案';
+      const pctsRaw = document.getElementById('new-pm-pcts').value.trim();
+
+      const nums = pctsRaw.split(',').map(x => parseFloat(x.trim())).filter(n => !isNaN(n) && n > 0);
+      if (!lbl || !arr || nums.length === 0) {
+        showToast('請輸入模式名稱、付款說明與各階段百分比（如 60,40）');
+        return;
+      }
+
+      const newKey = 'pm_' + Date.now();
+      paymentModes[newKey] = {
+        id: newKey,
+        label: lbl,
+        optionZh: `${lbl} — ${arr}`,
+        optionEn: `${lbl} — ${arr}`,
+        arrangement: arr,
+        arrangementEn: arr,
+        usage: use,
+        usageEn: use,
+        stages: nums.map((pct, i) => ({
+          name: `第 ${i + 1} 階段（${pct}%）`,
+          nameEn: `Stage ${i + 1} (${pct}%)`,
+          pct
+        }))
+      };
+
+      document.getElementById('new-pm-label').value = '';
+      document.getElementById('new-pm-arrange').value = '';
+      document.getElementById('new-pm-usage').value = '';
+      document.getElementById('new-pm-pcts').value = '';
+
+      selectedPaymentMode = newKey;
+      renderMenuEditor();
+      renderAll();
+      showToast(`已新增「${lbl}」付款模式！`);
+    });
+
+    // Other Event Listeners
+    searchInputEl.addEventListener('input', e => {
+      searchQuery = e.target.value;
+      renderServiceGrid();
+    });
+
+    paymentModeSelectEl.addEventListener('change', e => {
+      selectedPaymentMode = e.target.value;
+      renderTicket();
+    });
+
+    document.getElementById('btn-clear-cart').addEventListener('click', () => {
+      catalog.forEach(item => {
+        item.inCart = false;
+        item.qty = 1;
+        item.addons.forEach(a => { a.checked = false; });
+      });
+      renderAll();
+      showToast(currentLang === 'en' ? 'Quote ticket cleared' : '已清空報價單');
+    });
+
+    // WhatsApp Modal Events
+    const waModal = document.getElementById('whatsapp-modal');
+    document.getElementById('btn-open-whatsapp').addEventListener('click', () => {
+      const text = buildWhatsAppQuoteText();
+      document.getElementById('wa-preview-text').value = text;
+      document.getElementById('link-send-wa').href = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      waModal.classList.remove('hidden');
+      waModal.classList.add('flex');
+    });
+
+    document.getElementById('btn-close-wa-modal').addEventListener('click', () => {
+      waModal.classList.add('hidden');
+      waModal.classList.remove('flex');
+    });
+
+    document.getElementById('btn-copy-wa-text').addEventListener('click', () => {
+      const text = document.getElementById('wa-preview-text').value;
+      copyTextSafe(text, currentLang === 'en' ? 'WhatsApp quote text copied!' : '已複製 WhatsApp 報價單文字！');
+    });
+
+    // Save as Image ('存為圖片') Event & Modal
+    const imgModal = document.getElementById('image-preview-modal');
+    document.getElementById('btn-save-image').addEventListener('click', () => {
+      const dataUrl = generateReceiptPngDataUrl();
+      const clientSlug = (clientNameEl.value.trim() || 'Quote').replace(/\s+/g, '-');
+      const fileName = `Design-Quote-${clientSlug}.png`;
+
+      const imgEl = document.getElementById('generated-quote-img');
+      imgEl.src = dataUrl;
+
+      const dlLink = document.getElementById('btn-download-png-link');
+      dlLink.href = dataUrl;
+      dlLink.download = fileName;
+
+      // Trigger automatic download
+      const tempLink = document.createElement('a');
+      tempLink.href = dataUrl;
+      tempLink.download = fileName;
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      document.body.removeChild(tempLink);
+
+      // Show high-res image modal as well so mobile/tablet users can also long-press or save
+      imgModal.classList.remove('hidden');
+      imgModal.classList.add('flex');
+      showToast(currentLang === 'en' ? 'Quote image generated & downloading!' : '已生成報價單圖片並開始下載！');
+    });
+
+    document.getElementById('btn-close-img-modal').addEventListener('click', () => {
+      imgModal.classList.add('hidden');
+      imgModal.classList.remove('flex');
+    });
+
+    // Admin Login & Backend Management Events
+    const editorModal = document.getElementById('menu-editor-modal');
+    document.getElementById('btn-open-menu-editor').addEventListener('click', () => {
+      renderMenuEditor();
+      editorModal.classList.remove('hidden');
+      editorModal.classList.add('flex');
+    });
+
+    document.getElementById('btn-close-editor-modal').addEventListener('click', () => {
+      editorModal.classList.add('hidden');
+      editorModal.classList.remove('flex');
+    });
+
+    document.getElementById('btn-save-cloud').addEventListener('click', () => {
+      saveCatalogToVercelCloud();
+    });
+
+    document.getElementById('btn-lock-admin').addEventListener('click', () => {
+      adminUnlocked = false;
+      document.getElementById('admin-pin-input').value = '';
+      document.getElementById('pin-error-msg').classList.add('hidden');
+      renderMenuEditor();
+      renderAll();
+      showToast('已登出並鎖上管理員後台');
+    });
+
+    document.getElementById('btn-verify-pin').addEventListener('click', () => {
+      const pinVal = document.getElementById('admin-pin-input').value.trim();
+      if (pinVal === '8888' || pinVal.length >= 4) {
+        adminUnlocked = true;
+        document.getElementById('cloud-admin-pwd').value = pinVal;
+        document.getElementById('pin-error-msg').classList.add('hidden');
+        renderMenuEditor();
+        renderAll();
+        showToast('管理員登入成功！');
+      } else {
+        document.getElementById('pin-error-msg').classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('btn-add-new-service').addEventListener('click', () => {
+      const catId = document.getElementById('new-svc-cat').value;
+      const nameVal = document.getElementById('new-svc-name').value.trim();
+      const nameEnVal = document.getElementById('new-svc-name-en').value.trim() || nameVal;
+      const descVal = document.getElementById('new-svc-desc').value.trim() || '自訂設計服務項目';
+      const priceVal = parseInt(document.getElementById('new-svc-price').value, 10);
+
+      if (!nameVal || isNaN(priceVal) || priceVal < 0) {
+        showToast('請填寫完整的子分類服務名稱與底價');
+        return;
+      }
+
+      const catObj = mainCategories.find(c => c.id === catId) || mainCategories[0];
+      const newId = 'svc_' + Date.now();
+      catalog.push({
+        id: newId,
+        cat: catId,
+        catName: catObj.label,
+        name: nameVal,
+        nameEn: nameEnVal,
+        desc: descVal,
+        descEn: descVal,
+        basePrice: priceVal,
+        revealed: true,
+        inCart: false,
+        qty: 1,
+        note: '',
+        selectedTier: 'std_tier',
+        tiers: [
+          { id: 'std_tier', label: '標準設計方案 (底價)', labelEn: 'Standard Package (Base)', add: 0 },
+          { id: 'pro_tier', label: '進階客製方案', labelEn: 'Advanced Custom Package', add: 200 }
+        ],
+        addons: [
+          { id: 'src_file', label: '包含原始設計檔交付', labelEn: 'Include Source Files Handover', price: 150, checked: false }
+        ]
+      });
+
+      document.getElementById('new-svc-name').value = '';
+      document.getElementById('new-svc-name-en').value = '';
+      document.getElementById('new-svc-desc').value = '';
+      document.getElementById('new-svc-price').value = '';
+      currentCategory = catId;
+      activeServiceId = newId;
+      renderMenuEditor();
+      renderAll();
+      showToast(`已新增「${nameVal}」至 ${catObj.label} 分類！`);
+    });
+
+    document.getElementById('btn-copy-json').addEventListener('click', () => {
+      copyTextSafe(document.getElementById('json-config-box').value, '已複製完整菜單與付款模式 JSON！');
+    });
+
+    document.getElementById('btn-apply-json').addEventListener('click', () => {
+      try {
+        const parsed = JSON.parse(document.getElementById('json-config-box').value);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          catalog = parsed;
+        } else if (parsed && typeof parsed === 'object') {
+          if (Array.isArray(parsed.catalog)) catalog = parsed.catalog;
+          if (parsed.paymentModes && typeof parsed.paymentModes === 'object') paymentModes = parsed.paymentModes;
+        }
+        renderMenuEditor();
+        renderAll();
+        showToast('已成功套用自訂菜單與付款模式設定！');
+      } catch (err) {
+        showToast('JSON 格式有誤，請檢查語法');
+      }
+    });
+
+    // Init App
+    renderAll();
+    loadCloudCatalogIfAvailable();
+  </script>
+</body>
+</html>
