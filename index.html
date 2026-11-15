@@ -130,7 +130,7 @@
 
             <div id="ticket-items-list" class="divide-y divide-slate-100 my-2 max-h-[340px] overflow-y-auto pr-1"></div>
 
-            <!-- Clean Front-End Deposit & Payment Mode Selector (Usage reminders & editing moved to Admin Login) -->
+            <!-- Clean Front-End Deposit & Payment Mode Selector -->
             <div class="mt-4 pt-3 border-t border-slate-200/80 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60 space-y-2">
               <div class="flex items-center justify-between">
                 <label id="lbl-payment-mode" for="payment-mode-select" class="block text-xs font-bold text-slate-700">定金及付款模式</label>
@@ -167,7 +167,7 @@
               </div>
             </div>
 
-            <!-- Checkout & Export Actions (URL box removed; Print PDF replaced with real Save as Image) -->
+            <!-- Checkout & Export Actions -->
             <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <button type="button" id="btn-open-whatsapp" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-1.5">
                 <span id="lbl-btn-wa">匯出 WhatsApp 報價單</span>
@@ -230,17 +230,11 @@
     </div>
   </div>
 
-  <!-- Modal 3: Admin Login & Backend Management ('管理員登入' — Houses All Login, Payment Mode Edits & Menu CRUD) -->
+  <!-- Modal 3: Clean Admin Login & Backend Management ('管理員登入' — No Exposed Password Hints!) -->
   <div id="menu-editor-modal" class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-4xl w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
       <div class="px-5 py-4 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <div class="flex items-center gap-2">
-            <h3 class="font-bold text-base">管理員後台 (Admin Portal)</h3>
-            <span id="cloud-sync-badge" class="text-[11px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-400/30 font-medium">Vercel + GitHub Sync</span>
-          </div>
-          <p class="text-xs text-slate-400 mt-0.5">集中管理定金及付款模式、各階段比例、服務底價與菜單增刪</p>
-        </div>
+        <h3 class="font-bold text-base">管理員後台 (Admin Portal)</h3>
         <div class="flex items-center gap-2">
           <button type="button" id="btn-save-cloud" class="hidden text-xs font-bold px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 transition shadow-sm">
             同步儲存至 GitHub 雲端
@@ -254,35 +248,40 @@
         </div>
       </div>
 
-      <!-- Admin Login Gate (Default View before unlocking) -->
-      <div id="admin-pin-gate" class="p-8 bg-slate-50 flex-1 flex flex-col items-center justify-center text-center gap-4">
+      <!-- Clean Admin Login Gate (Zero password hints exposed!) -->
+      <div id="admin-pin-gate" class="p-10 bg-slate-50 flex-1 flex flex-col items-center justify-center text-center gap-4">
         <div class="w-12 h-12 rounded-2xl bg-slate-900 text-teal-400 flex items-center justify-center font-bold shadow-sm">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
           </svg>
         </div>
-        <div class="max-w-md">
-          <div class="font-bold text-base text-slate-900">管理員登入 (Admin Login)</div>
-          <p class="text-xs text-slate-500 mt-1">請輸入管理員密碼以進入後台修改「定金及付款模式」、調整「服務底價」與「增刪菜單項目」（預覽環境預設密碼為 <code class="font-mono font-bold text-slate-800">8888</code>；部署至 Vercel 後將核對 <code class="font-mono">ADMIN_PASSWORD</code>）</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <input id="admin-pin-input" type="password" placeholder="輸入管理員密碼 (8888)" class="w-48 text-center text-sm font-mono bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-teal-500">
+        <div class="font-bold text-base text-slate-900">管理員登入 (Admin Login)</div>
+        <div class="flex items-center gap-2 mt-1">
+          <input id="admin-pin-input" type="password" placeholder="請輸入管理員密碼" class="w-52 text-center text-sm font-mono bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-teal-500">
           <button type="button" id="btn-verify-pin" class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-semibold shadow-sm transition">
             登入後台
           </button>
         </div>
-        <p id="pin-error-msg" class="text-xs text-rose-600 hidden">密碼不正確，預覽環境預設密碼為 8888</p>
+        <p id="pin-error-msg" class="text-xs text-rose-600 hidden">密碼錯誤，請重新輸入</p>
       </div>
 
       <!-- Unlocked Admin Content -->
       <div id="admin-editor-body" class="p-5 overflow-y-auto space-y-6 flex-1 hidden">
 
-        <!-- Cloud Password Bar -->
-        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div class="flex flex-wrap items-center gap-2">
-            <label for="cloud-admin-pwd" class="font-bold text-slate-700">Vercel 雲端同步驗證密碼 (ADMIN_PASSWORD)：</label>
-            <input id="cloud-admin-pwd" type="password" value="8888" placeholder="部署後的管理員密碼" class="w-40 font-mono bg-white border border-slate-300 rounded-lg px-2.5 py-1.5">
-            <span class="text-slate-500">（點擊上方「同步儲存至 GitHub 雲端」時會連同此密碼送往 <code class="font-mono">/api/menu</code> 寫回 GitHub）</span>
+        <!-- Section 0: Change Admin Password Box -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h4 class="font-bold text-sm text-slate-900">更改管理員密碼 (Change Admin Password)</h4>
+              <p class="text-xs text-slate-500">修改後按下「更新密碼」即立即生效，並可連同菜單一起同步儲存至雲端</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <input id="new-admin-pwd" type="password" placeholder="輸入新管理員密碼" class="text-xs font-mono bg-white border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500">
+            <input id="confirm-admin-pwd" type="password" placeholder="再次確認新密碼" class="text-xs font-mono bg-white border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500">
+            <button type="button" id="btn-change-pwd" class="py-2 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition">
+              更新管理員密碼
+            </button>
           </div>
         </div>
 
@@ -366,7 +365,7 @@
         <!-- Section 4: Export / Import JSON Config -->
         <div class="pt-4 border-t border-slate-200">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-            <label for="json-config-box" class="text-xs font-bold text-slate-700">雲端 menu.json 資料結構預覽（包含菜單與自訂定金付款模式，自動與 GitHub /api/menu 同步）</label>
+            <label for="json-config-box" class="text-xs font-bold text-slate-700">雲端 menu.json 資料結構預覽（包含菜單與自訂定金付款模式）</label>
             <div class="flex gap-2">
               <button type="button" id="btn-copy-json" class="text-xs font-semibold px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-teal-700">複製 JSON</button>
               <button type="button" id="btn-apply-json" class="text-xs font-semibold px-2.5 py-1 rounded bg-teal-600 hover:bg-teal-500 text-white">套用上方 JSON</button>
@@ -556,7 +555,7 @@
       }
     ];
 
-    // 2. Editable Payment & Deposit Modes Default Presets (Usage notes kept for Admin Portal only)
+    // 2. Editable Payment & Deposit Modes Default Presets
     const defaultPaymentModes = {
       '50_50': {
         id: '50_50',
@@ -839,6 +838,11 @@
     ];
 
     // App State
+    // SHA-256 of initial password "123456"
+    const INITIAL_PWD_HASH = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
+    let currentAdminPwdHash = INITIAL_PWD_HASH;
+    let sessionAdminPassword = '';
+
     let catalog = JSON.parse(JSON.stringify(defaultCatalog));
     let paymentModes = JSON.parse(JSON.stringify(defaultPaymentModes));
     let currentLang = 'zh';
@@ -846,7 +850,27 @@
     let searchQuery = '';
     let activeServiceId = 'card';
     let selectedPaymentMode = '50_50';
-    let adminUnlocked = false; // Default locked so '管理員登入' opens the login gate first!
+    let adminUnlocked = false;
+
+    // Try restoring locally updated password hash if previously changed in browser
+    try {
+      const savedHash = localStorage.getItem('designpos_pwd_hash');
+      if (savedHash && savedHash.length === 64) {
+        currentAdminPwdHash = savedHash;
+      }
+    } catch (e) {
+      // Ignore in restricted iframe
+    }
+
+    async function sha256Hex(str) {
+      if (window.crypto && window.crypto.subtle) {
+        const buf = new TextEncoder().encode(str);
+        const hashBuf = await window.crypto.subtle.digest('SHA-256', buf);
+        return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+      // Fallback simple deterministic check if SubtleCrypto unavailable
+      return str === '123456' ? INITIAL_PWD_HASH : str;
+    }
 
     // DOM References
     const mainCatRowEl = document.getElementById('main-category-row');
@@ -950,7 +974,7 @@
       });
     }
 
-    // Load Cloud Catalog & Payment Modes from Vercel Serverless API (/api/menu)
+    // Load Cloud Catalog, Payment Modes & Password Hash from Vercel Serverless API (/api/menu)
     async function loadCloudCatalogIfAvailable() {
       try {
         const res = await fetch('/api/menu', { method: 'GET', headers: { 'Accept': 'application/json' } });
@@ -962,16 +986,18 @@
           if (data && data.paymentModes && Object.keys(data.paymentModes).length > 0) {
             paymentModes = data.paymentModes;
           }
+          if (data && typeof data.adminPasswordHash === 'string' && data.adminPasswordHash.length === 64) {
+            currentAdminPwdHash = data.adminPasswordHash;
+          }
           renderAll();
         }
       } catch (e) {
-        // Running locally or in Canvas preview; uses built-in defaults seamlessly
+        // Uses built-in defaults seamlessly when offline or in preview
       }
     }
 
-    // Save Catalog & Payment Modes to Vercel Serverless API (/api/menu -> GitHub repo)
+    // Save Catalog, Payment Modes & Admin Password Hash to Vercel Serverless API (/api/menu -> GitHub repo)
     async function saveCatalogToVercelCloud() {
-      const pwd = document.getElementById('cloud-admin-pwd').value.trim();
       const saveBtn = document.getElementById('btn-save-cloud');
       const origText = saveBtn.textContent;
       saveBtn.textContent = '同步中...';
@@ -981,18 +1007,23 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-admin-password': pwd
+            'x-admin-password': sessionAdminPassword,
+            'x-admin-password-hash': currentAdminPwdHash
           },
-          body: JSON.stringify({ catalog, paymentModes })
+          body: JSON.stringify({
+            catalog,
+            paymentModes,
+            adminPasswordHash: currentAdminPwdHash
+          })
         });
         if (res.ok) {
-          showToast('已成功透過 Vercel API 將菜單與付款模式寫回 GitHub 雲端！');
+          showToast('已成功將最新菜單、付款模式與密碼同步寫回雲端！');
         } else {
           const errData = await res.json().catch(() => ({}));
-          showToast(errData.error || '已更新當前網站設定（部署至 Vercel 後即自動寫入 GitHub）');
+          showToast(errData.error || '已更新當前網站設定');
         }
       } catch (e) {
-        showToast('已套用修改！（部署至 Vercel 後將自動寫入 GitHub /api/menu）');
+        showToast('已儲存當前網站設定！');
       } finally {
         saveBtn.textContent = origText;
       }
@@ -1527,7 +1558,7 @@
       renderTicketSummaryOnly();
     }
 
-    // Build Formatted WhatsApp Quote Text (Bilingual, without state URL)
+    // Build Formatted WhatsApp Quote Text
     function buildWhatsAppQuoteText() {
       const cartItems = catalog.filter(s => s.inCart);
       const grandTotal = cartItems.reduce((sum, item) => sum + calcServiceTotal(item), 0);
@@ -1602,12 +1633,11 @@
       const pad = 36;
       const contentWidth = width - pad * 2;
 
-      // Measure height dynamically first
       const tempCanvas = document.createElement('canvas');
       const mCtx = tempCanvas.getContext('2d');
 
-      let y = 128; // Header + Client Info block
-      y += 42; // Section Header
+      let y = 128;
+      y += 42;
 
       const itemBlocks = [];
       if (cartItems.length === 0) {
@@ -1645,18 +1675,16 @@
       const scheduleBoxHeight = 48 + stageCount * 26 + 16;
       const totalHeight = y + 95 + scheduleBoxHeight + 48;
 
-      const scale = 2; // Retina 2x resolution
+      const scale = 2;
       const canvas = document.createElement('canvas');
       canvas.width = width * scale;
       canvas.height = totalHeight * scale;
       const ctx = canvas.getContext('2d');
       ctx.scale(scale, scale);
 
-      // Outer white card background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, totalHeight);
 
-      // Top Dark Banner
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, width, 82);
 
@@ -1668,7 +1696,6 @@
       ctx.font = '500 13px Inter, "Noto Sans TC", sans-serif';
       ctx.fillText(`${t('datePrefix')}${dateStr}`, pad, 62);
 
-      // Client & Note Bar
       ctx.fillStyle = '#f8fafc';
       ctx.fillRect(0, 82, width, 54);
       ctx.strokeStyle = '#e2e8f0';
@@ -1691,7 +1718,6 @@
       ctx.fillStyle = '#0f172a';
       ctx.fillText(note, width / 2 + nLabelW, 114);
 
-      // Items Table Header
       let curY = 166;
       ctx.fillStyle = '#64748b';
       ctx.font = 'bold 12px Inter, "Noto Sans TC", sans-serif';
@@ -1708,7 +1734,6 @@
       ctx.stroke();
       curY += 22;
 
-      // Render Each Item Block
       if (itemBlocks.length === 0) {
         ctx.fillStyle = '#94a3b8';
         ctx.font = '500 14px Inter, "Noto Sans TC", sans-serif';
@@ -1742,7 +1767,6 @@
         });
       }
 
-      // Subtotal & Grand Total
       curY += 6;
       ctx.fillStyle = '#475569';
       ctx.font = '500 14px Inter, "Noto Sans TC", sans-serif';
@@ -1769,7 +1793,6 @@
       ctx.fillText(fmtMoney(grandTotal), width - pad, curY);
       ctx.textAlign = 'left';
 
-      // Payment Schedule Box
       curY += 22;
       if (modeObj) {
         ctx.fillStyle = '#f0fdfa';
@@ -1819,7 +1842,7 @@
       return canvas.toDataURL('image/png');
     }
 
-    // Render Menu & Payment Modes Editor Modal (All modifications housed inside '管理員登入')
+    // Render Menu & Payment Modes Editor Modal
     function renderMenuEditor() {
       const pinGate = document.getElementById('admin-pin-gate');
       const editorBody = document.getElementById('admin-editor-body');
@@ -1841,7 +1864,7 @@
         lockBtn.classList.remove('hidden');
       }
 
-      // Render Editable Payment Modes List (with full stage-by-stage editing in Admin)
+      // Render Editable Payment Modes List
       const pmListEl = document.getElementById('editor-payment-modes-list');
       pmListEl.replaceChildren();
 
@@ -2157,7 +2180,7 @@
     function updateJsonPreviewBox() {
       const box = document.getElementById('json-config-box');
       if (box) {
-        box.value = JSON.stringify({ catalog, paymentModes }, null, 2);
+        box.value = JSON.stringify({ catalog, paymentModes, adminPasswordHash: currentAdminPwdHash }, null, 2);
       }
     }
 
@@ -2178,6 +2201,34 @@
     document.getElementById('btn-lang-en').addEventListener('click', () => {
       currentLang = 'en';
       renderAll();
+    });
+
+    // Change Admin Password Handler inside Admin Portal
+    document.getElementById('btn-change-pwd').addEventListener('click', async () => {
+      const newPwd = document.getElementById('new-admin-pwd').value.trim();
+      const confirmPwd = document.getElementById('confirm-admin-pwd').value.trim();
+
+      if (!newPwd || newPwd.length < 4) {
+        showToast('新密碼長度請至少輸入 4 個字元');
+        return;
+      }
+      if (newPwd !== confirmPwd) {
+        showToast('兩次輸入的新密碼不一致，請重新確認');
+        return;
+      }
+
+      const newHash = await sha256Hex(newPwd);
+      currentAdminPwdHash = newHash;
+      sessionAdminPassword = newPwd;
+      try {
+        localStorage.setItem('designpos_pwd_hash', newHash);
+      } catch (e) {
+        // Ignore storage error
+      }
+      document.getElementById('new-admin-pwd').value = '';
+      document.getElementById('confirm-admin-pwd').value = '';
+      updateJsonPreviewBox();
+      showToast('管理員密碼已更新！點擊右上角「同步儲存至 GitHub 雲端」即可寫回雲端');
     });
 
     // Add New Payment Mode in Admin Modal
@@ -2276,7 +2327,6 @@
       dlLink.href = dataUrl;
       dlLink.download = fileName;
 
-      // Trigger automatic download
       const tempLink = document.createElement('a');
       tempLink.href = dataUrl;
       tempLink.download = fileName;
@@ -2284,7 +2334,6 @@
       tempLink.click();
       document.body.removeChild(tempLink);
 
-      // Show high-res image modal as well so mobile/tablet users can also long-press or save
       imgModal.classList.remove('hidden');
       imgModal.classList.add('flex');
       showToast(currentLang === 'en' ? 'Quote image generated & downloading!' : '已生成報價單圖片並開始下載！');
@@ -2314,6 +2363,7 @@
 
     document.getElementById('btn-lock-admin').addEventListener('click', () => {
       adminUnlocked = false;
+      sessionAdminPassword = '';
       document.getElementById('admin-pin-input').value = '';
       document.getElementById('pin-error-msg').classList.add('hidden');
       renderMenuEditor();
@@ -2321,17 +2371,33 @@
       showToast('已登出並鎖上管理員後台');
     });
 
-    document.getElementById('btn-verify-pin').addEventListener('click', () => {
+    async function handleVerifyAdminPin() {
       const pinVal = document.getElementById('admin-pin-input').value.trim();
-      if (pinVal === '8888' || pinVal.length >= 4) {
+      if (!pinVal) {
+        document.getElementById('pin-error-msg').classList.remove('hidden');
+        return;
+      }
+      const inputHash = await sha256Hex(pinVal);
+      if (inputHash === currentAdminPwdHash) {
         adminUnlocked = true;
-        document.getElementById('cloud-admin-pwd').value = pinVal;
+        sessionAdminPassword = pinVal;
+        document.getElementById('admin-pin-input').value = '';
         document.getElementById('pin-error-msg').classList.add('hidden');
         renderMenuEditor();
         renderAll();
         showToast('管理員登入成功！');
       } else {
         document.getElementById('pin-error-msg').classList.remove('hidden');
+      }
+    }
+
+    document.getElementById('btn-verify-pin').addEventListener('click', () => {
+      handleVerifyAdminPin();
+    });
+
+    document.getElementById('admin-pin-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        handleVerifyAdminPin();
       }
     });
 
@@ -2395,6 +2461,9 @@
         } else if (parsed && typeof parsed === 'object') {
           if (Array.isArray(parsed.catalog)) catalog = parsed.catalog;
           if (parsed.paymentModes && typeof parsed.paymentModes === 'object') paymentModes = parsed.paymentModes;
+          if (typeof parsed.adminPasswordHash === 'string' && parsed.adminPasswordHash.length === 64) {
+            currentAdminPwdHash = parsed.adminPasswordHash;
+          }
         }
         renderMenuEditor();
         renderAll();
